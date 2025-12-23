@@ -1,0 +1,23 @@
+# Build outputs
+Sqlite3Esp32/
+prov_backup/
+TFT_eSPI/
+build/
+.pio/
+.vscode/
+*.elf
+
+*.map
+*.sh
+*.key
+*.pem
+
+# Local vault / SD artifacts (never commit)
+*.db
+*.sqlite
+*.sqlite3
+*.production.bin
+
+# OS noise
+.DS_Store
+Thumbs.db
