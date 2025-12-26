@@ -17,7 +17,7 @@ static void addCategory() {
     return;
   }
 
-  String name = runTextInput("Add Category", "Enter name", 16, TextInputUI::InputMode::STANDARD, false);
+  String name = runTextInput("Add Category", "Enter name.", 16, TextInputUI::InputMode::STANDARD, false);
   name.trim();
   if (name.length() == 0) return;
 
@@ -31,13 +31,23 @@ static void addCategory() {
   c.name = name;
   c.db_id = newId;
   g_vault.categories.push_back(c);
+
+  // Re-sort categories alphabetically
+  sortCategoriesByName();
+
+  // Find the new index of the just-inserted category (by db_id)
+  size_t newIdx = 0;
+  for (; newIdx < g_vault.categories.size(); ++newIdx) {
+    if (g_vault.categories[newIdx].db_id == newId) break;
+  }
+
   refreshDecryptedItemNames();
 
-  size_t newIdx = g_vault.categories.size() - 1;
   g_activeCategory = newIdx;
   g_activePassword = SIZE_MAX;
   g_state = UiState::CategoryScreen;
   categoryScreen(newIdx);
+
 }
 
 static void editCategory(size_t cidx) {
@@ -49,12 +59,22 @@ static void editCategory(size_t cidx) {
   if (name.length() == 0) return;
 
   Category& c = g_vault.categories[cidx];
+  int32_t id = c.db_id;
   if (!db_update_category_name(c.db_id, name)) {
     waitForButtonB("Error", "DB update category failed", "OK");
     return;
   }
 
   c.name = name;
+
+  size_t newIdx = 0;
+  for (; newIdx < g_vault.categories.size(); ++newIdx) {
+    if (g_vault.categories[newIdx].db_id == id) break;
+  }
+
+  // Re-sort categories alphabetically
+  sortCategoriesByName();
+
   refreshDecryptedItemNames();
 
   g_activeCategory = cidx;
@@ -123,16 +143,36 @@ static void addPasswordToCategory(size_t cidx) {
     return;
   }
 
-  String label = runTextInput("Add Password", "Entry name", 32, TextInputUI::InputMode::STANDARD, false);
+  String label = runTextInput("Add Password", "Entry name. Like 'Facebook', 'Gmail', 'Bank'", 32, TextInputUI::InputMode::STANDARD, false);
   label.trim();
   if (label.length() == 0) return;
 
-  PwGenMode mode = promptPwGenMode("Password Mode");
-  if (mode == PwGenMode::Cancel) return;
+  String pw;
 
-  String pw = (mode == PwGenMode::Auto) ? generatePassword(g_settings) : runTextInput("Manual Password", "Enter password", 64, TextInputUI::InputMode::STANDARD, false);
-  pw.trim();
-  if (pw.length() == 0) return;
+  while (true) {
+    PwGenMode mode = promptPwGenMode("Password Mode");
+    if (mode == PwGenMode::Cancel) {
+      // Abort add flow entirely
+      g_activeCategory = cidx;
+      g_activePassword = SIZE_MAX;
+      g_state = UiState::CategoryScreen;
+      categoryScreen(cidx);
+      return;
+    }
+
+    if (mode == PwGenMode::Auto) {
+      pw = generatePassword(g_settings);
+      break;
+    } else {
+      pw = runTextInput("Manual Password", "Enter password", 64,TextInputUI::InputMode::STANDARD, false);
+      pw.trim();
+      if (!pw.length()) {
+        continue;
+      }
+      break;
+    }
+  }
+  
 
   PasswordItem it;
   it.id = make_id_16();
@@ -154,13 +194,24 @@ static void addPasswordToCategory(size_t cidx) {
   }
 
   cat.items.push_back(it);
+
+  // Re-sort items by label within this category
+  sortItemsByName(cat);
+
+  // Find new index of this item by its id
+  size_t newIdx = 0;
+  for (; newIdx < cat.items.size(); ++newIdx) {
+    if (cat.items[newIdx].id == it.id) break;
+  }
+
   refreshDecryptedItemNames();
   
+  // Wipe the plaintext password from RAM
   for (size_t i = 0; i < pw.length(); ++i) pw.setCharAt(i, 0);
   pw = "";
 
   g_activeCategory = cidx;
-  g_activePassword = g_vault.categories[cidx].items.size() - 1;
+  g_activePassword = newIdx;  // focus the new item in its sorted position
   g_state = UiState::CategoryScreen;
   log_heap("after addPasswordToCategory");
   log_stack("after addPasswordToCategory");
@@ -177,13 +228,28 @@ static void editPasswordName(size_t cidx, size_t pidx) {
   if (label.length() == 0) return;
 
   PasswordItem& it = cat.items[pidx];
+  String id = it.id;
 
   if (!db_update_item_label(it.id, label)) {
     waitForButtonB("Error", "DB update item label failed", "OK");
     return;
   }
+
+  it.label_plain = label;
+
+  // Re-sort items in this category
+  sortItemsByName(cat);
+  refreshDecryptedItemNames();
+
   it.label_plain = label;
   refreshDecryptedItemNames();
+  for (size_t i = 0; i < cat.items.size(); ++i) {
+    if (cat.items[i].id == id) {
+      g_activeCategory = cidx;
+      g_activePassword = i;
+      break;
+    }
+  }
 }
 
 static void deletePassword(size_t cidx, size_t pidx) {

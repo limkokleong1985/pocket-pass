@@ -351,6 +351,26 @@ static void refreshDecryptedItemNames() {
   log_heap("after refreshDecryptedItemNames");
 }
 
+void sortCategoriesByName() {
+  std::sort(
+    g_vault.categories.begin(),
+    g_vault.categories.end(),
+    [](const Category& a, const Category& b) {
+      return strcasecmp(a.name.c_str(), b.name.c_str()) < 0;
+    }
+  );
+}
+
+void sortItemsByName(Category& c) {
+  std::sort(
+    c.items.begin(),
+    c.items.end(),
+    [](const PasswordItem& a, const PasswordItem& b) {
+      return strcasecmp(a.label_plain.c_str(), b.label_plain.c_str()) < 0;
+    }
+  );
+}
+
 // ==== Device Secret (NVS) ====
 static bool ensureDeviceSecret() {
   Serial.println("[NVS] ensureDeviceSecret");

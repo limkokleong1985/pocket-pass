@@ -1,7 +1,7 @@
 //10_app_decl.ino
 // ==== Hardware Pins / Config ====
 static const uint8_t ENC_PIN_A = 4; // Use encoder rotaty to move up
-static const uint8_t ENC_PIN_B = 5; // Use encoder rotaty to move up
+static const uint8_t ENC_PIN_B = 5; // Use encoder rotaty to move down
 static const uint8_t BTN_BACK = 9;  // Back
 static const uint8_t BTN_SELECT = 6;  // Select
 static const uint8_t BTN_UP = 3;  // Use button to move up
@@ -57,7 +57,7 @@ static constexpr const char* AUTH_LOCK_KEY = "pin_lock";
 #define FW_SIG_PATH    "/pocketPass/firmware/firmware.sig"
 #define DB_PATH        "/sdcard/pocketPass/vault.db"
 
-const char* firmwareVersion = "v1.2.1";
+const char* firmwareVersion = "v1.2.2";
 
 // ECDSA P-256 public key (PEM) for firmware signature verification
 static const char ECDSA_P256_PUBLIC_KEY_PEM[] =
@@ -291,6 +291,8 @@ static bool decrypt_string_meta_b64(const std::vector<uint8_t>& aad,const String
 
 // JSON vault model helpers
 static void refreshDecryptedItemNames();
+void sortCategoriesByName();
+void sortItemsByName(Category& c);
 
 // Recovery key
 static String generate_recovery_key_b64();

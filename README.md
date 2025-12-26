@@ -11,10 +11,9 @@ No Wi‑Fi, no cloud, no telemetry – everything stays on your device.
 
 ## Support & Buy
 
-> Replace these placeholders with your real links.
 
-- 💖 **Donate:** _Add your donation link here_
-- 🛒 **Buy a pre‑built Pocket Pass:** _Add your product shop link here_
+- 💖 **Donate:** _To Do_
+- 🛒 **Buy a pre‑built Pocket Pass:** _To Do_
 
 ---
 
@@ -395,13 +394,21 @@ on the microSD card. The `.sig` file is an ECDSA P‑256 signature over the SHA�
 
 You can get official firmware builds from:
 
+- **GitHub Releases**  
+  - _Add your releases link here, e.g.:_  
+    - [Latest firmware releases](https://github.com/limkokleong1985/pocket-pass/releases)
 - **Firmware folder in this repository**  
+  - v1.2.2:  
+    - [`firmware/v1-2-2/firmware.bin`](./firmware/v1-2-2/firmware.bin)  
+    - [`firmware/v1-2-2/firmware.sig`](./firmware/v1-2-2/firmware.sig)
+    - Changes:
+      - Fixed on add or edit are not been sorted after completed.
+      - Fixed freeze issue when changing from Manual define password to Auto-generate password.
+      - Improved Rotary Encoder functionality for smoother operation.
   - v1.2.1:  
     - [`firmware/v1-2-1/firmware.bin`](./firmware/v1-2-1/firmware.bin)  
     - [`firmware/v1-2-1/firmware.sig`](./firmware/v1-2-1/firmware.sig)
-- **(Optional) GitHub Releases**  
-  - _Add your releases link here, e.g.:_  
-    - [Latest firmware releases](https://github.com/limkokleong1985/pocket-pass/releases)
+
 
 I recommend you always download from the **latest tagged version** or the **latest Release**.
 
@@ -448,9 +455,10 @@ I recommend you always download from the **latest tagged version** or the **late
 
 | Version | SD Instructions | Files in Repo |
 |--------|------------------|---------------|
+| v1.2.2 | Copy to `/pocketPass/firmware/` as `firmware.bin` + `firmware.sig` | [`firmware/v1-2-2/`](./firmware/v1-2-2/) |
 | v1.2.1 | Copy to `/pocketPass/firmware/` as `firmware.bin` + `firmware.sig` | [`firmware/v1-2-1/`](./firmware/v1-2-1/) |
 
-> **Important:** Never rename the files on the SD card to include the version (e.g. `firmware-v1-2-1.bin`).  
+> **Important:** Never rename the files on the SD card to include the version.  
 > The device will only look for the exact names `firmware.bin` and `firmware.sig` in `/pocketPass/firmware/`.
 
 ---

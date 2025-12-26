@@ -44,8 +44,8 @@ public:
   bool wasReleasedDown() { bool f = _btnDownEventRelease; _btnDownEventRelease = false; return f; }
   bool wasLongPressedDown() { bool f = _btnDownEventLong; _btnDownEventLong = false; return f; }
 
-  // Tuning: set how many valid edges per detent (default internal = 3)
-  void setEdgesPerDetent(uint8_t edges) { _edgesPerDetent = edges ? edges : 3; }
+  // Tuning: set how many valid edges per detent (default internal = 4)
+  void setEdgesPerDetent(uint8_t edges) { _edgesPerDetent = edges ? edges : 4; }
 
   // Optionally invert direction if needed
   void setInvertDirection(bool inv) { _invert = inv; }
@@ -71,7 +71,7 @@ private:
   uint8_t _lastState = 0; // last stable 2-bit AB
   int8_t  _stepAccum = 0; // accumulates +1/-1 per valid edge until +/-edgesPerDetent
   int     _count = 0;
-  uint8_t _edgesPerDetent = 3;
+  uint8_t _edgesPerDetent = 4;
   bool    _invert = false;
 
   // Turn edge flags

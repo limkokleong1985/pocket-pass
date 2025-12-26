@@ -3,8 +3,7 @@
 static void log_stack(const char* tag) {
 #if defined(ARDUINO_ARCH_ESP32)
   UBaseType_t watermark = uxTaskGetStackHighWaterMark(nullptr);
-  Serial.printf("[STACK] %s watermark=%u words (%u bytes)\n",
-                tag, (unsigned)watermark, (unsigned)watermark * sizeof(StackType_t));
+  Serial.printf("[STACK] %s watermark=%u words (%u bytes)\n",tag, (unsigned)watermark, (unsigned)watermark * sizeof(StackType_t));
 #else
   Serial.printf("[STACK] %s (not ESP32)\n", tag);
 #endif
@@ -368,8 +367,7 @@ static void showArchivesForItem(Category& cat, size_t pwdIdx) {
     // Title: "<name> (arch X/Y)"
     static char tbuf[64];
     const String& name = cat.item_names_decrypted[pwdIdx];
-    snprintf(tbuf, sizeof(tbuf), "%s (arch %u/%u)",
-           name.c_str(), (unsigned)(posIdx + 1), (unsigned)hist.size());
+    snprintf(tbuf, sizeof(tbuf), "%s (arch %u/%u)",name.c_str(), (unsigned)(posIdx + 1), (unsigned)hist.size());
     menu.setTitle(tbuf);
 
     // Subtitle: masked preview of archived password
@@ -1103,7 +1101,7 @@ static void showAboutScreen() {
   const char* title = "About";
   const char* subtitle = "This device detail";
   String content =
-    "This offline password vault by Crocpix Enterprise stores your data only on the SD card and never connects to the internet. Passwords are protected with AES‑256‑GCM encryption and device‑bound keys derived from your 6‑digit passcode and a per‑device secret, so copying the SD card alone cannot decrypt your vault. A Recovery Key lets you restore or migrate if needed. Firmware updates must be officially signed, reducing the risk of tampering. Keep your passcode and Recovery Key safe-without them, your encrypted data cannot be recovered.";
+    "This offline password vault by Crocpix Enterprise stores your data only on the SD card and never connects to the internet. Passwords are protected with AES‑256‑GCM encryption and device‑bound keys derived from your 6‑digit passcode and a per‑device secret, so copying the SD card alone cannot decrypt your vault. A Recovery Key lets you restore or migrate if needed. Firmware updates must be officially signed, reducing the risk of tampering. Keep your passcode and Recovery Key safe-without them, your encrypted data cannot be recovered. For new release visit https://github.com/limkokleong1985/pocket-pass/releases";
   menu.showInfoModal(title, subtitle, content, "[ BACK ]", 21, false);
 }
 
