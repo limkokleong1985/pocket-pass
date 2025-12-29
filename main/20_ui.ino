@@ -588,9 +588,11 @@ static String runTextInput(const char* title,
     delay(1); // be nice to the watchdog
   }
 
+  menu.clearScreen(BLACK);
+
   if (g_ti_canceled) {
     Serial.println("[UI] runTextInput: canceled");
-    menu.clearScreen(BLACK);
+    
     return String();
   }
 
@@ -1378,3 +1380,4 @@ static void settingsPasswordMenu() {
 
   if (g_state == UiState::Settings) settingsMenu();
 }
+

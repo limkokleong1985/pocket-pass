@@ -57,7 +57,7 @@ static constexpr const char* AUTH_LOCK_KEY = "pin_lock";
 #define FW_SIG_PATH    "/pocketPass/firmware/firmware.sig"
 #define DB_PATH        "/sdcard/pocketPass/vault.db"
 
-const char* firmwareVersion = "v1.2.2";
+const char* firmwareVersion = "v1.2.3";
 
 // ECDSA P-256 public key (PEM) for firmware signature verification
 static const char ECDSA_P256_PUBLIC_KEY_PEM[] =

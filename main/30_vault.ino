@@ -19,7 +19,11 @@ static void addCategory() {
 
   String name = runTextInput("Add Category", "Enter name.", 16, TextInputUI::InputMode::STANDARD, false);
   name.trim();
-  if (name.length() == 0) return;
+  if (name.length() == 0) {
+    g_state = UiState::MainMenu;
+    buildAndShowMainMenu();
+    return;
+  }
 
   int32_t newId = -1;
   if (!db_insert_category(name, newId)) {
@@ -56,7 +60,14 @@ static void editCategory(size_t cidx) {
 
   String name = runTextInput("Edit Category", "Enter new name", 16, TextInputUI::InputMode::STANDARD, false);
   name.trim();
-  if (name.length() == 0) return;
+  if (name.length() == 0) {
+    // Abort add flow, return to category screen
+    g_activeCategory = cidx;
+    g_activePassword = SIZE_MAX;
+    g_state = UiState::CategoryScreen;
+    categoryScreen(cidx);
+    return;
+  }
 
   Category& c = g_vault.categories[cidx];
   int32_t id = c.db_id;
@@ -145,7 +156,14 @@ static void addPasswordToCategory(size_t cidx) {
 
   String label = runTextInput("Add Password", "Entry name. Like 'Facebook', 'Gmail', 'Bank'", 32, TextInputUI::InputMode::STANDARD, false);
   label.trim();
-  if (label.length() == 0) return;
+  if (label.length() == 0) {
+    // Abort add flow, return to category screen
+    g_activeCategory = cidx;
+    g_activePassword = SIZE_MAX;
+    g_state = UiState::CategoryScreen;
+    categoryScreen(cidx);
+    return;
+  }
 
   String pw;
 
@@ -225,7 +243,14 @@ static void editPasswordName(size_t cidx, size_t pidx) {
 
   String label = runTextInput("Edit Name", "Enter new name", 32, TextInputUI::InputMode::STANDARD, false);
   label.trim();
-  if (label.length() == 0) return;
+  if (label.length() == 0) {
+    // Nothing changed – just rebuild the category screen so UI is clean
+    g_activeCategory = cidx;
+    g_activePassword = pidx;
+    g_state = UiState::CategoryScreen;
+    categoryScreen(cidx);
+    return;
+  }
 
   PasswordItem& it = cat.items[pidx];
   String id = it.id;
