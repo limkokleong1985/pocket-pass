@@ -209,7 +209,6 @@ static PwGenMode promptPwGenMode(const char* title = "Password Mode") {
   menu.setOnSelect(PW_MODE_OnSelect);
   menu.setOnBack(PW_MODE_OnBack);
 
-  // Optional: physical button fallback in case of handler issues
   pinMode(BTN_SELECT, INPUT_PULLUP);
   int lastB = HIGH;
 
@@ -588,14 +587,18 @@ static String runTextInput(const char* title,
     delay(1); // be nice to the watchdog
   }
 
-  menu.clearScreen(BLACK);
 
+  menuLoopAuto();
   if (g_ti_canceled) {
     Serial.println("[UI] runTextInput: canceled");
     
     return String();
   }
-
+  input.setTitle("");
+  input.setDescription("");
+  input.setMaxLen(6);
+  input.setInputMode(TextInputUI::InputMode::STANDARD);
+  
   Serial.printf("[UI] runTextInput: saved (%u chars)\n", (unsigned)g_ti_result.length());
   return g_ti_result;
 }
@@ -806,6 +809,15 @@ static void MENU_OnSelect(uint8_t idx, const char* label) {
       if (L.startsWith("[ PASSWORD SETTING ]")) {
         g_state = UiState::Settings_Password;
         g_menu_done = true;
+      } else if (L == "[ IMPORT ]") {
+        // New: prepare /import + template and reboot into MSC mode
+        settingsImportExcel();
+        return; 
+
+      } else if (L == "[ EXPORT ]") {
+        settingsExportJson();
+        return; // reboots into MSC
+
       } else if (L == "[ UPDATE SECURITY ]") {
         String cur = promptPasscode6("Auth", "Enter current passcode");
         LoadingScope loading("LOADING", "Checking...");
@@ -1337,8 +1349,19 @@ static void settingsMenu() {
   menu.setTitle("Setting");
   menu.setSubTitle(firmwareVersion);
 
-  const char* items[] = { "[ PASSWORD SETTING ]", "[ UPDATE SECURITY ]", "[ ACCESS SDCARD ]", "[ ABOUT ]","[ LICENSE ]","[ PRIVACY ]", "[ CREDITS ]", "[ BACK ]" };
-  menu.setMenu(items, 8);
+ const char* items[] = {
+    "[ PASSWORD SETTING ]",
+    "[ IMPORT ]",
+    "[ EXPORT ]",
+    "[ UPDATE SECURITY ]",
+    "[ ACCESS SDCARD ]",
+    "[ ABOUT ]",
+    "[ LICENSE ]",
+    "[ PRIVACY ]",
+    "[ CREDITS ]",
+    "[ BACK ]"
+  };
+  menu.setMenu(items, 10);
   menu.setSelectedIndex(0);
   g_menuCtx = MenuContext::Settings;
   g_menu_done = false;

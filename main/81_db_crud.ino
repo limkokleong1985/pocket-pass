@@ -395,3 +395,183 @@ static bool db_migrate_encrypt_names_labels_if_needed(bool wipe_plaintext) {
   Serial.println("[MIG] migration OK");
   return true;
 }
+
+// ==== Import from /import/data.xlsx ====
+// Simple CSV-style parser: Category,Label,Password
+static bool parseImportRow(const String& line,String& outCategory,String& outLabel,String& outPassword) {
+  int c1 = line.indexOf(',');
+  if (c1 < 0) return false;
+  int c2 = line.indexOf(',', c1 + 1);
+
+  if (c2 < 0) {
+    // Only two columns given: Category,Label
+    outCategory = line.substring(0, c1);
+    outLabel    = line.substring(c1 + 1);
+    outPassword = "";
+  } else {
+    outCategory = line.substring(0, c1);
+    outLabel    = line.substring(c1 + 1, c2);
+    outPassword = line.substring(c2 + 1);
+  }
+
+  outCategory.trim();
+  outLabel.trim();
+  outPassword.trim();
+
+  // Strip optional surrounding double quotes
+  auto stripQuotes = [](String& s) {
+    if (s.length() >= 2 && s[0] == '"' && s[s.length() - 1] == '"') {
+      s = s.substring(1, s.length() - 1);
+      s.trim();
+    }
+  };
+  stripQuotes(outCategory);
+  stripQuotes(outLabel);
+  stripQuotes(outPassword);
+
+  return true;
+}
+
+static void importFromExcelIfPresent() {
+  if (!g_crypto.unlocked) return; // must be unlocked (keys available)
+
+  if (!g_sd.exists(IMPORT_XLSX_PATH)) {
+    Serial.println("[IMPORT] No /import/data.xlsx found, skipping import.");
+    return;
+  }
+
+  Serial.println("[IMPORT] Found /import/data.xlsx, starting import...");
+  File f = g_sd.open(IMPORT_XLSX_PATH, FILE_READ);
+  if (!f) {
+    Serial.println("[IMPORT] Failed to open data.xlsx");
+    waitForButtonB("Import", "Open /import/data.xlsx failed", "OK");
+    return;
+  }
+
+  LoadingScope loading("IMPORT", "Reading data.xlsx...");
+
+  size_t imported      = 0;
+  size_t skipped       = 0;
+  bool   headerChecked = false;
+  size_t lineNo        = 0;
+
+  while (f.available()) {
+    String line = f.readStringUntil('\n');
+    lineNo++;
+    line.trim();
+    if (!line.length()) continue;          // skip empty lines
+    if (line[0] == '#' || line[0] == ';')  // comment lines
+      continue;
+
+    // Handle optional UTF‑8 BOM on first line
+    if (lineNo == 1 && line.startsWith("\xEF\xBB\xBF")) {
+      line.remove(0, 3);
+      line.trim();
+      if (!line.length()) continue;
+    }
+
+    // Detect and skip header row once
+    if (!headerChecked) {
+      headerChecked = true;
+      String lower = line;
+      lower.toLowerCase();
+      if (lower.indexOf("category") >= 0 &&
+          lower.indexOf("label")    >= 0 &&
+          lower.indexOf("password") >= 0) {
+        continue; // header line
+      }
+    }
+
+    String cat, label, pw;
+    if (!parseImportRow(line, cat, label, pw)) {
+      skipped++;
+      continue;
+    }
+
+    if (!cat.length() || !label.length()) {
+      skipped++;
+      continue;
+    }
+
+    if (!pw.length()) {
+      pw = generatePassword(g_settings);  // auto-generate
+    }
+
+    // Find or create category (case‑sensitive)
+    Category* targetCat = nullptr;
+    for (auto& c : g_vault.categories) {
+      if (c.name == cat) { targetCat = &c; break; }
+    }
+    if (!targetCat) {
+      if (g_vault.categories.size() >= MAX_CATEGORIES) {
+        Serial.println("[IMPORT] Max categories reached, skipping row");
+        skipped++;
+        continue;
+      }
+      int32_t newId = -1;
+      if (!db_insert_category(cat, newId)) {
+        Serial.println("[IMPORT] db_insert_category failed");
+        skipped++;
+        continue;
+      }
+      Category c;
+      c.name  = cat;
+      c.db_id = newId;
+      g_vault.categories.push_back(c);
+      targetCat = &g_vault.categories.back();
+    }
+
+    // Capacity check per category
+    if (targetCat->items.size() >= MAX_PASSWORDS_PER_CATEGORY) {
+      Serial.println("[IMPORT] Max passwords per category reached, skipping row");
+      skipped++;
+      continue;
+    }
+
+    // Build PasswordItem with encrypted fields
+    PasswordItem it;
+    it.id = make_id_16();
+
+    if (!encrypt_label_password(label, pw, it.id,it.label_ct_b64, it.label_nonce_b64,it.pw_ct_b64, it.pw_nonce_b64)) {
+      Serial.println("[IMPORT] encrypt_label_password failed");
+      skipped++;
+      continue;
+    }
+    it.label_plain = label;
+
+    if (!db_insert_item(targetCat->db_id, it)) {
+      Serial.println("[IMPORT] db_insert_item failed");
+      skipped++;
+      continue;
+    }
+
+    targetCat->items.push_back(it);
+    imported++;
+
+    if ((imported + skipped) % 10 == 0) {
+      char buf[48];
+      snprintf(buf, sizeof(buf), "Imported %u, skipped %u",
+               (unsigned)imported, (unsigned)skipped);
+      updateLoading(buf);
+    }
+  }
+  f.close();
+
+  // Delete the import file as requested
+  if (g_sd.remove(IMPORT_XLSX_PATH)) {
+    Serial.println("[IMPORT] data.xlsx removed after import");
+  } else {
+    Serial.println("[IMPORT] Failed to remove data.xlsx");
+  }
+
+  // Re-sort for UI; item_names_decrypted will be rebuilt by refreshDecryptedItemNames()
+  sortCategoriesByName();
+  for (auto& c : g_vault.categories) {
+    sortItemsByName(c);
+  }
+
+  char msg[64];
+  snprintf(msg, sizeof(msg), "Imported %u, skipped %u",
+           (unsigned)imported, (unsigned)skipped);
+  waitForButtonB("Import done", msg, "OK");
+}

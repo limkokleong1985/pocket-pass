@@ -32,6 +32,14 @@ static bool sd_write_all(const char* path, const String& content) {
   return true;
 }
 
+static void deleteExportIfPresent() {
+  if (g_sd.exists(EXPORT_JSON_PATH)) {
+    Serial.println("[EXPORT] Deleting stale /export/data.json on boot");
+    if (!g_sd.remove(EXPORT_JSON_PATH)) {
+      Serial.println("[EXPORT] Failed to remove /export/data.json");
+    }
+  }
+}
 
 // ==== Heap monitor ====
 static void log_heap(const char* tag) {
@@ -75,6 +83,195 @@ static void setMSCFlagAndReboot() {
     g_prefs.end();
   }
   ESP.restart();
+}
+
+static void settingsImportExcel() {
+  Serial.println("[IMPORT] settingsImportExcel");
+
+  // Ensure /import directory exists
+  if (!g_sd.exists(IMPORT_DIR)) {
+    Serial.printf("[IMPORT] mkdir(%s)\n", IMPORT_DIR);
+    if (!g_sd.mkdir(IMPORT_DIR)) {
+      waitForButtonB("Error", "Create /import failed", "OK");
+      return;
+    }
+  }
+
+  // Create template data.xlsx if it does not exist yet.
+  // NOTE: This is a simple CSV-text file with .xlsx extension so it can be
+  // opened easily in Excel / LibreOffice. Columns: Category,Label,Password
+  if (!g_sd.exists(IMPORT_XLSX_PATH)) {
+    String header =
+      "Category,Label,Password\r\n";
+    if (!sd_write_all(IMPORT_XLSX_PATH, header)) {
+      waitForButtonB("Error", "Create data.xlsx failed", "OK");
+      return;
+    }
+  }
+
+  // Create readme.md with usage instructions (only if missing, so we do not
+  // overwrite user notes).
+  if (!g_sd.exists(IMPORT_README_PATH)) {
+    String readme;
+    readme  = "# Pocket Pass Import\r\n\r\n";
+    readme += "File: `/import/data.xlsx` (simple CSV text with `.xlsx` name).\r\n\r\n";
+    readme += "Columns:\r\n\r\n";
+    readme += "1. **Category**  – case sensitive. A new category will be created if it does not exist.\r\n";
+    readme += "2. **Label**     – account name. Duplicates are allowed; each row becomes a new entry.\r\n";
+    readme += "3. **Password**  – optional. If empty, the device will auto-generate a password\r\n";
+    readme += "                   using the current password settings.\r\n\r\n";
+    readme += "Notes:\r\n";
+    readme += "- The device parses this as a simple CSV file; **do not use commas** inside values.\r\n";
+    readme += "- Save the file as plain text (CSV-style). The `.xlsx` extension is only for convenience.\r\n";
+    readme += "- After the next unlock, the device will import all rows and then delete `data.xlsx`.\r\n";
+
+    (void)sd_write_all(IMPORT_README_PATH, readme);
+  }
+
+  waitForButtonB(
+    "Import",
+    "A template has been created at /import.\n"
+    "Connect via USB and edit data.xlsx.\n"
+    "After safely ejecting, the device\n"
+    "will import on next unlock.",
+    "ENTER USB MODE"
+  );
+
+  // Close DB and reboot into MSC mode so the SD card is exposed to the host.
+  db_close();
+  setMSCFlagAndReboot();  // does not return
+}
+
+// Write a JSON string value with proper escaping.
+static void jsonWriteEscaped(File& f, const String& s) {
+  for (int i = 0; i < s.length(); ++i) {
+    char c = s[i];
+    switch (c) {
+      case '\"': f.print("\\\""); break;
+      case '\\': f.print("\\\\"); break;
+      case '\b': f.print("\\b");  break;
+      case '\f': f.print("\\f");  break;
+      case '\n': f.print("\\n");  break;
+      case '\r': f.print("\\r");  break;
+      case '\t': f.print("\\t");  break;
+      default:
+        if ((uint8_t)c < 0x20) {
+          // Control characters -> \u00XX
+          char buf[7];
+          sprintf(buf, "\\u%04x", (unsigned char)c);
+          f.print(buf);
+        } else {
+          f.print(c); // UTF‑8 bytes are passed through
+        }
+        break;
+    }
+  }
+}
+
+static void settingsExportJson() {
+  Serial.println("[EXPORT] settingsExportJson");
+
+  if (!g_crypto.unlocked) {
+    waitForButtonB("Export", "Vault must be unlocked", "OK");
+    return;
+  }
+
+  // Ensure /export directory exists
+  if (!g_sd.exists(EXPORT_DIR)) {
+    Serial.printf("[EXPORT] mkdir(%s)\n", EXPORT_DIR);
+    if (!g_sd.mkdir(EXPORT_DIR)) {
+      waitForButtonB("Error", "Create /export failed", "OK");
+      return;
+    }
+  }
+
+  // Create readme.md (if missing) explaining JSON format
+  if (!g_sd.exists(EXPORT_README_PATH)) {
+    String readme;
+    readme  = "# Pocket Pass Export (JSON)\r\n\r\n";
+    readme += "File: `/export/data.json`.\r\n\r\n";
+    readme += "Structure:\r\n\r\n";
+    readme += "```json\r\n";
+    readme += "{\r\n";
+    readme += "  \"version\": 1,\r\n";
+    readme += "  \"entries\": [\r\n";
+    readme += "    { \"Category\": \"...\", \"Label\": \"...\", \"Password\": \"...\" },\r\n";
+    readme += "    ...\r\n";
+    readme += "  ]\r\n";
+    readme += "}\r\n";
+    readme += "```\r\n\r\n";
+    readme += "- Each object in `entries` corresponds to one vault item.\r\n";
+    readme += "- Only the latest password is exported (no history).\r\n";
+    readme += "- All strings are UTF‑8 JSON strings; symbols and special characters\r\n";
+    readme += "  are preserved and properly escaped.\r\n";
+    readme += "- On the next reboot, `data.json` will be deleted automatically for safety.\r\n";
+
+    (void)sd_write_all(EXPORT_README_PATH, readme);
+  }
+
+  // Remove old export file if it exists
+  if (g_sd.exists(EXPORT_JSON_PATH)) {
+    g_sd.remove(EXPORT_JSON_PATH);
+  }
+
+  File f = g_sd.open(EXPORT_JSON_PATH, FILE_WRITE);
+  if (!f) {
+    waitForButtonB("Error", "Create /export/data.json failed", "OK");
+    return;
+  }
+
+  LoadingScope loading("EXPORT", "Writing data.json...");
+
+  size_t written = 0;
+  size_t failed  = 0;
+
+  // JSON header
+  f.print("{\r\n  \"version\": 1,\r\n  \"entries\": [\r\n");
+
+  bool firstEntry = true;
+
+  for (auto& c : g_vault.categories) {
+    for (auto& it : c.items) {
+      String pw;
+      if (!decrypt_password(it, it.id, pw)) {
+        Serial.println("[EXPORT] decrypt_password failed, skipping entry");
+        failed++;
+        continue;
+      }
+
+      if (!firstEntry) {
+        f.print(",\r\n");
+      } else {
+        firstEntry = false;
+      }
+
+      f.print("    {\"Category\":\"");
+      jsonWriteEscaped(f, c.name);
+      f.print("\",\"Label\":\"");
+      jsonWriteEscaped(f, it.label_plain);
+      f.print("\",\"Password\":\"");
+      jsonWriteEscaped(f, pw);
+      f.print("\"}");
+
+      written++;
+
+      // Wipe plaintext password from RAM
+      for (size_t i = 0; i < pw.length(); ++i) pw.setCharAt(i, 0);
+      pw = "";
+    }
+  }
+
+  f.print("\r\n  ]\r\n}\r\n");
+  f.flush();
+  f.close();
+
+  char msg[64];
+  snprintf(msg, sizeof(msg), "Exported %u entries", (unsigned)written);
+  waitForButtonB("Export ready", msg, "ENTER USB MODE");
+
+  // Expose SD to host so the user can copy /export/data.json
+  db_close();
+  setMSCFlagAndReboot();  // will reboot into MSC mode
 }
 
 // Dedicated boot path for MSC mode: do NOT mount SD/DB here.

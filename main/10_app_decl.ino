@@ -49,15 +49,18 @@ static constexpr const char* AUTH_LOCK_KEY = "pin_lock";
 
 // SD Paths
 #define BASE_DIR       "/pocketPass"
-#define META_PATH      "/pocketPass/meta.json"   // legacy (unused for DB)
-#define ITEMS_PATH     "/pocketPass/items.json"  // legacy (unused for DB)
-#define CONFIG_PATH    "/pocketPass/config.json" // legacy (unused for DB)
 #define FW_DIR         "/pocketPass/firmware"
 #define FW_BIN_PATH    "/pocketPass/firmware/firmware.bin"
 #define FW_SIG_PATH    "/pocketPass/firmware/firmware.sig"
 #define DB_PATH        "/sdcard/pocketPass/vault.db"
+#define IMPORT_DIR         "/import"
+#define IMPORT_XLSX_PATH   "/import/data.xlsx"
+#define IMPORT_README_PATH "/import/readme.md"
+#define EXPORT_DIR         "/export"
+#define EXPORT_JSON_PATH   "/export/data.json"
+#define EXPORT_README_PATH "/export/readme.md"
 
-const char* firmwareVersion = "v1.2.3";
+const char* firmwareVersion = "v1.2.4";
 
 // ECDSA P-256 public key (PEM) for firmware signature verification
 static const char ECDSA_P256_PUBLIC_KEY_PEM[] =
@@ -172,6 +175,13 @@ struct CryptoState {
   std::vector<uint8_t> K_meta;
   bool unlocked = false;
 };
+
+// ==== Import/Export from Excel ==== 
+static void settingsImportExcel();          
+static void importFromExcelIfPresent();     
+static bool parseImportRow(const String& line,String& outCategory,String& outLabel,String& outPassword);
+static void settingsExportJson();
+static void deleteExportIfPresent();
 
 // ==== Global App State ====
 Vault g_vault;

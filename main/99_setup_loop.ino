@@ -8,7 +8,7 @@ void setup() {
   LCD_SetOrientation(LCD_ORIENTATION);
   
   g_rotary.begin(ENC_PIN_B, ENC_PIN_A, BTN_BACK, BTN_SELECT, BTN_UP, BTN_DOWN);
-  input.begin(g_rotary);
+  
   input.setInputInvert(!INVERT_INPUT_SELECTION);
   menu.begin(g_rotary, LCD_ORIENTATION, LCD_BACKLIGHT);
   menu.setInvertDirection(!INVERT_MENU_SELECTION);
@@ -32,6 +32,8 @@ void setup() {
     Serial.printf("[BOOT] mkdir(%s)\n", BASE_DIR);
     g_sd.mkdir(BASE_DIR);
   }
+
+  deleteExportIfPresent();
 
   if (!db_open()) {
     waitForButtonB("Error", "DB open failed", "OK");
@@ -128,6 +130,9 @@ void setup() {
       waitForButtonB("Error", "Load items fail", "OK");
       return;
     }
+
+    // NEW: check for /import/data.xlsx and import if present
+    importFromExcelIfPresent();
     
     refreshDecryptedItemNames();
     g_state = UiState::MainMenu;

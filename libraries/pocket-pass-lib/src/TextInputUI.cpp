@@ -166,18 +166,23 @@ void TextInputUI::setInputInvert(bool invert) {
 
 void TextInputUI::setTitle(const char* t) {
   _title = t;
-  drawStaticUI(); drawInputText(); drawScroller();
+  //drawStaticUI(); 
+  //drawInputText(); 
+  //drawScroller();
 }
 
 void TextInputUI::setDescription(const char* d) {
   _description = d;
-  drawStaticUI(); drawInputText(); drawScroller();
+  //drawStaticUI(); 
+  //drawInputText(); 
+  //drawScroller();
 }
 
 void TextInputUI::setMaxLen(uint8_t m) {
   _maxLen = (m <= MAX_CAP) ? m : MAX_CAP;
   if (_inputLen > _maxLen) { _inputLen = _maxLen; _buf[_inputLen] = '\0'; }
-  drawRemainingLabel(); drawInputText();
+  drawRemainingLabel(); 
+  //drawInputText();
 }
 
 void TextInputUI::setInputMode(InputMode m) {
@@ -197,7 +202,9 @@ void TextInputUI::setInputMode(InputMode m) {
     _aPrev = false;
   }
 
-  drawStaticUI(); drawInputText(); drawScroller();
+  //drawStaticUI(); 
+  //drawInputText(); 
+  //drawScroller();
 }
 
 void TextInputUI::clear() {
