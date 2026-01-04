@@ -54,13 +54,13 @@ static constexpr const char* AUTH_LOCK_KEY = "pin_lock";
 #define FW_SIG_PATH    "/pocketPass/firmware/firmware.sig"
 #define DB_PATH        "/sdcard/pocketPass/vault.db"
 #define IMPORT_DIR         "/import"
-#define IMPORT_XLSX_PATH   "/import/data.xlsx"
+#define IMPORT_CSV_PATH   "/import/data.csv"
 #define IMPORT_README_PATH "/import/readme.md"
 #define EXPORT_DIR         "/export"
 #define EXPORT_JSON_PATH   "/export/data.json"
 #define EXPORT_README_PATH "/export/readme.md"
 
-const char* firmwareVersion = "v1.2.4";
+const char* firmwareVersion = "v1.2.5";
 
 // ECDSA P-256 public key (PEM) for firmware signature verification
 static const char ECDSA_P256_PUBLIC_KEY_PEM[] =
@@ -256,7 +256,7 @@ static bool isVaultPresent();
 static bool ensureDeviceSecret();
 static bool readDeviceSecret(std::vector<uint8_t>& out);
 static bool writeDeviceSecret(const uint8_t* buf, size_t len);
-
+static void initDeviceSecretsPartition();
 // SD string helpers (legacy kept)
 static bool sd_read_all(const char* path, String& out);
 static bool sd_write_all(const char* path, const String& content);

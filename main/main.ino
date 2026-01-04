@@ -2,6 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) 2025 Lim Kok Leong
 
+#include "nvs_flash.h"
+#include "esp_system.h"
+#include "esp_log.h"
 
 #include <Arduino.h>
 #include <vector>

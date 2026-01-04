@@ -97,14 +97,14 @@ static void settingsImportExcel() {
     }
   }
 
-  // Create template data.xlsx if it does not exist yet.
-  // NOTE: This is a simple CSV-text file with .xlsx extension so it can be
+  // Create template data.csv if it does not exist yet.
+  // NOTE: This is a simple CSV-text file with .csv extension so it can be
   // opened easily in Excel / LibreOffice. Columns: Category,Label,Password
-  if (!g_sd.exists(IMPORT_XLSX_PATH)) {
+  if (!g_sd.exists(IMPORT_CSV_PATH)) {
     String header =
       "Category,Label,Password\r\n";
-    if (!sd_write_all(IMPORT_XLSX_PATH, header)) {
-      waitForButtonB("Error", "Create data.xlsx failed", "OK");
+    if (!sd_write_all(IMPORT_CSV_PATH, header)) {
+      waitForButtonB("Error", "Create data.csv failed", "OK");
       return;
     }
   }
@@ -114,7 +114,7 @@ static void settingsImportExcel() {
   if (!g_sd.exists(IMPORT_README_PATH)) {
     String readme;
     readme  = "# Pocket Pass Import\r\n\r\n";
-    readme += "File: `/import/data.xlsx` (simple CSV text with `.xlsx` name).\r\n\r\n";
+    readme += "File: `/import/data.csv` (simple CSV text with `.csv` name).\r\n\r\n";
     readme += "Columns:\r\n\r\n";
     readme += "1. **Category**  – case sensitive. A new category will be created if it does not exist.\r\n";
     readme += "2. **Label**     – account name. Duplicates are allowed; each row becomes a new entry.\r\n";
@@ -122,18 +122,15 @@ static void settingsImportExcel() {
     readme += "                   using the current password settings.\r\n\r\n";
     readme += "Notes:\r\n";
     readme += "- The device parses this as a simple CSV file; **do not use commas** inside values.\r\n";
-    readme += "- Save the file as plain text (CSV-style). The `.xlsx` extension is only for convenience.\r\n";
-    readme += "- After the next unlock, the device will import all rows and then delete `data.xlsx`.\r\n";
+    readme += "- Save the file as plain text (CSV-style). The `.csv` extension is only for convenience.\r\n";
+    readme += "- After the next unlock, the device will import all rows and then delete `data.csv`.\r\n";
 
     (void)sd_write_all(IMPORT_README_PATH, readme);
   }
 
   waitForButtonB(
     "Import",
-    "A template has been created at /import.\n"
-    "Connect via USB and edit data.xlsx.\n"
-    "After safely ejecting, the device\n"
-    "will import on next unlock.",
+    "A template has been created at /import. Connect via USB and edit data.csv. After safely ejecting, the device will import on next unlock.",
     "ENTER USB MODE"
   );
 
@@ -301,7 +298,7 @@ static void bootMSCMode() {
     menu.setMenu(items, 1);
     menu.setSelectedIndex(0);
   } else {
-    menu.setSubTitle("MSC init failed");
+    menu.setSubTitle("MSC init failed");  
     static const char* items[] = { "[ REBOOT ]" };
     menu.setMenu(items, 1);
     menu.setSelectedIndex(0);

@@ -1,8 +1,7 @@
-# Name,          Type, SubType, Offset,   Size,     Flags
 nvs,             data, nvs,     0x9000,   0x7000,
-factory,         app,  factory, 0x10000,  0x2A0000,
-otadata,         data, ota,     ,         0x2000,
-app0,            app,  ota_0,   ,         0x2A0000,
-app1,            app,  ota_1,   ,         0x2A0000,
-device_secrets,  data, nvs,     ,         0x4000,
-spiffs,          data, spiffs,  ,         0x340000,
+factory,         app,  factory, 0x10000,  0x2A0000, encrypted
+otadata,         data, ota,     ,         0x2000,   encrypted
+app0,            app,  ota_0,   ,         0x2A0000, encrypted
+app1,            app,  ota_1,   ,         0x2A0000, encrypted
+device_secrets,  data, nvs,     ,         0x4000,      
+spiffs,          data, spiffs,  ,         0x340000,           

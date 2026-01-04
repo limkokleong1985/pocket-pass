@@ -412,15 +412,43 @@ static bool readDeviceSecret(std::vector<uint8_t>& out) {
   return true;
 }
 
+static void initDeviceSecretsPartition() {
+  esp_err_t err = nvs_flash_init_partition(MSC_PART);
+  Serial.printf("[DEVSEC] nvs_flash_init_partition(\"%s\") -> 0x%X (%s)\n", MSC_PART, err, esp_err_to_name(err));
+
+  if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+    Serial.println("[DEVSEC] erasing device_secrets partition...");
+    esp_err_t e2 = nvs_flash_erase_partition(MSC_PART);
+    Serial.printf("[DEVSEC] nvs_flash_erase_partition(\"%s\") -> 0x%X (%s)\n",MSC_PART, e2, esp_err_to_name(e2));
+
+    if (e2 == ESP_OK) {
+      err = nvs_flash_init_partition(MSC_PART);
+      Serial.printf("[DEVSEC] after erase, init_partition -> 0x%X (%s)\n", err, esp_err_to_name(err));
+    }
+  }
+}
+
 static bool writeDeviceSecret(const uint8_t* buf, size_t len) {
-  if (!buf || len != DEVSEC_LEN) return false;
+  Serial.printf("[DEVSEC] writeDeviceSecret(len=%u)\n", (unsigned)len);
+  if (!buf || len != DEVSEC_LEN) {
+    Serial.println("[DEVSEC] invalid args");
+    return false;
+  }
 
   // read-only = false
-  if (!g_prefs.begin(DEVSEC_NS, false, MSC_PART)) return false;
+  bool ok_begin = g_prefs.begin(DEVSEC_NS, false, MSC_PART);
+  Serial.printf("[DEVSEC] prefs.begin(ns=\"%s\", RW, part=\"%s\") -> %s\n",
+                DEVSEC_NS, MSC_PART, ok_begin ? "OK" : "FAIL");
+  if (!ok_begin) return false;
+
   size_t put = g_prefs.putBytes(DEVSEC_KEY, buf, len);
+  Serial.printf("[DEVSEC] putBytes(key=\"%s\") -> %u\n",
+                DEVSEC_KEY, (unsigned)put);
   g_prefs.end();
 
-  return put == len;
+  bool ok = (put == len);
+  Serial.printf("[DEVSEC] write %s\n", ok ? "OK" : "FAILED");
+  return ok;
 }
 
 // ==== Recovery Key Handling ====

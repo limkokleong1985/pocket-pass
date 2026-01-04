@@ -22,7 +22,7 @@ void setup() {
     bootMSCMode();
     return;
   }
-
+  initDeviceSecretsPartition();
   if (!ensureDeviceSecret()) {
     waitForButtonB("Error", "Device secret init failed", "OK");
   }
@@ -131,7 +131,7 @@ void setup() {
       return;
     }
 
-    // NEW: check for /import/data.xlsx and import if present
+    // NEW: check for /import/data.csv and import if present
     importFromExcelIfPresent();
     
     refreshDecryptedItemNames();

@@ -291,7 +291,7 @@ From the main menu:
 
 
 1. Inside the category, choose **`[ ADD PASSWORD ]`**.
-<img src="./resources/06-category-new-password.jpg" height="200"><br>
+<br><img src="./resources/06-category-new-password.jpg" height="200"><br>
 2. Enter the **entry name / label** (e.g., “Gmail”).
 3. Choose how to define the password:
    - `[ AUTO GENERATE ]`

@@ -396,7 +396,7 @@ static bool db_migrate_encrypt_names_labels_if_needed(bool wipe_plaintext) {
   return true;
 }
 
-// ==== Import from /import/data.xlsx ====
+// ==== Import from /import/data.csv ====
 // Simple CSV-style parser: Category,Label,Password
 static bool parseImportRow(const String& line,String& outCategory,String& outLabel,String& outPassword) {
   int c1 = line.indexOf(',');
@@ -435,20 +435,20 @@ static bool parseImportRow(const String& line,String& outCategory,String& outLab
 static void importFromExcelIfPresent() {
   if (!g_crypto.unlocked) return; // must be unlocked (keys available)
 
-  if (!g_sd.exists(IMPORT_XLSX_PATH)) {
-    Serial.println("[IMPORT] No /import/data.xlsx found, skipping import.");
+  if (!g_sd.exists(IMPORT_CSV_PATH)) {
+    Serial.println("[IMPORT] No /import/data.csv found, skipping import.");
     return;
   }
 
-  Serial.println("[IMPORT] Found /import/data.xlsx, starting import...");
-  File f = g_sd.open(IMPORT_XLSX_PATH, FILE_READ);
+  Serial.println("[IMPORT] Found /import/data.csv, starting import...");
+  File f = g_sd.open(IMPORT_CSV_PATH, FILE_READ);
   if (!f) {
-    Serial.println("[IMPORT] Failed to open data.xlsx");
-    waitForButtonB("Import", "Open /import/data.xlsx failed", "OK");
+    Serial.println("[IMPORT] Failed to open data.csv");
+    waitForButtonB("Import", "Open /import/data.csv failed", "OK");
     return;
   }
 
-  LoadingScope loading("IMPORT", "Reading data.xlsx...");
+  LoadingScope loading("IMPORT", "Reading data.csv...");
 
   size_t imported      = 0;
   size_t skipped       = 0;
@@ -558,10 +558,10 @@ static void importFromExcelIfPresent() {
   f.close();
 
   // Delete the import file as requested
-  if (g_sd.remove(IMPORT_XLSX_PATH)) {
-    Serial.println("[IMPORT] data.xlsx removed after import");
+  if (g_sd.remove(IMPORT_CSV_PATH)) {
+    Serial.println("[IMPORT] data.csv removed after import");
   } else {
-    Serial.println("[IMPORT] Failed to remove data.xlsx");
+    Serial.println("[IMPORT] Failed to remove data.csv");
   }
 
   // Re-sort for UI; item_names_decrypted will be rebuilt by refreshDecryptedItemNames()
