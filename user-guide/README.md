@@ -109,13 +109,16 @@ General rules:
 - Press SELECT to trigger the highlighted action.
 - Press BACK to return to the previous screen or cancel or change text format.
 
-_Add an image of your actual front panel here:_
+[![In this seventh Pocket Pass video, I show how to physically access and remove the SD card from the device.](https://img.youtube.com/vi/38DyTYe2GNk/hqdefault.jpg)](https://www.youtube.com/shorts/38DyTYe2GNk)
+
 
 
 ---
 
+
 ### Startup & first‑time setup
 
+[![Pocket Pass #1 – Startup & First‑Time Setup](https://img.youtube.com/vi/HyMy2jPYt1g/hqdefault.jpg)](https://www.youtube.com/watch?v=HyMy2jPYt1g)
 #### Power‑on
 
 1. Insert a **formatted SD card** into the device.
@@ -180,6 +183,10 @@ If you have alot of passwords need to be insert, i suggest to use the import fea
 ---
 
 ### Unlocking and auto‑lock
+
+[![Pocket Pass #2 – Add Categories & Passwords + Auto‑Type to Phone (Offline Password Vault)](https://img.youtube.com/vi/vrPvXE7K-zU/hqdefault.jpg)](https://www.youtube.com/shorts/vrPvXE7K-zU)
+
+
 
 #### Normal unlock
 
@@ -383,6 +390,10 @@ The device keeps an **archive** whenever you **rotate** a password.
 
 #### Rotate a password
 
+[![Pocket Pass #4 – Rotate Passwords & View Password History (Archived Versions)](https://img.youtube.com/vi/YV-oQ6_ddLY/hqdefault.jpg)](https://www.youtube.com/shorts/YV-oQ6_ddLY)
+
+
+
 From the password actions menu:
 
 1. Select **`[ ROTATE PASSWORD ]`**.
@@ -415,6 +426,10 @@ From the password actions menu:
 ---
 
 ### Importing passwords from spreadsheet
+
+[![Pocket Pass #3 – Import from CSV & Create Work/Personal Passwords](https://img.youtube.com/vi/YV-oQ6_ddLY/hqdefault.jpg)](https://www.youtube.com/watch?v=KUuFH5pSic8)
+
+
 
 Import allows you to bulk‑add many entries using a simple CSV‑style file.
 
@@ -567,6 +582,10 @@ These settings are used when:
 ---
 
 ## Updating security level, PIN & Recovery Key
+
+[![Pocket Pass #5 – Update Security Level & Generate a New Recovery Key](https://img.youtube.com/vi/yq6r9CHw8vY/hqdefault.jpg)](https://www.youtube.com/shorts/yq6r9CHw8vY)
+
+
 
 The **`[ UPDATE SECURITY ]`** option lets you:
 
@@ -721,6 +740,10 @@ In this mode:
 
 ## Firmware update from SD card
 
+[![Pocket Pass #6 – Firmware Update via SD Card ([ACCESS SDCARD], .bin & .sig from GitHub)](https://img.youtube.com/vi/Ku-1LHSXNdc/hqdefault.jpg)](https://www.youtube.com/watch?v=Ku-1LHSXNdc)
+
+
+
 Firmware updates are verified and applied directly from files on the SD card.
 
 ### Required files
@@ -781,6 +804,8 @@ The update process on boot is the same as in Option A.
 ---
 
 ### Backups, recovery & device migration
+
+[![Pocket Pass #8 – Replace ESP32 Module & Restore Vault Using Recovery Key](https://img.youtube.com/vi/GKPrybibfoA/hqdefault.jpg)](https://www.youtube.com/watch?v=GKPrybibfoA)
 
 #### What is stored where?
 
