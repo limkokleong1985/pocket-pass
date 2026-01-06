@@ -12,8 +12,8 @@ No Wi‑Fi, no cloud, no telemetry – everything stays on your device.
 ## Support & Buy
 
 
-- 💖 **Donate:** _To Do_
-- 🛒 **Buy a pre‑built Pocket Pass:** _To Do_
+
+- 🛒 **Buy a pre‑built Pocket Pass:** [Etsy](https://www.etsy.com/shop/Crocpix)
 
 ---
 
