@@ -132,7 +132,8 @@ static bool selectDestinationCategory(size_t sourceCidx, size_t& outDestCidx) {
 
   pinMode(BTN_SELECT, INPUT_PULLUP); // SELECT
   pinMode(BTN_BACK, INPUT_PULLUP); // BACK
-  int lastB = HIGH, lastA = HIGH;
+  int lastB = digitalRead(BTN_SELECT);
+  int lastA = digitalRead(BTN_BACK);
 
   while (!done) {
     menuLoopAuto();
@@ -210,7 +211,7 @@ static PwGenMode promptPwGenMode(const char* title = "Password Mode") {
   menu.setOnBack(PW_MODE_OnBack);
 
   pinMode(BTN_SELECT, INPUT_PULLUP);
-  int lastB = HIGH;
+  int lastB = digitalRead(BTN_SELECT);
 
   while (!g_pw_mode_done) {
     menuLoopAuto();
@@ -304,7 +305,7 @@ static void waitForButtonB(const char* title, const char* message, const char* b
   menu.setOnSelect(OKMODAL_OnSelect);
   menu.setOnBack(OKMODAL_OnBack);
 
-  int lastB = HIGH;
+  int lastB = digitalRead(BTN_SELECT);
   while (!g_ok_modal_done) {
     menuLoopAuto();
     int b = digitalRead(BTN_SELECT);
@@ -436,8 +437,8 @@ static void showArchivesForItem(Category& cat, size_t pwdIdx) {
   rebuildArchiveMenu(pos);
 
   // Simple polling loop for Select/Back
-  int lastB = HIGH;
-  int lastA = HIGH;
+  int lastB = digitalRead(BTN_SELECT);
+  int lastA = digitalRead(BTN_BACK);
   while (!exitArchive) {
     menuLoopAuto();
 
@@ -1054,8 +1055,8 @@ static void showCreditsMenu() {
 
   pinMode(BTN_SELECT, INPUT_PULLUP); // Select/OK
   pinMode(BTN_BACK, INPUT_PULLUP); // Back
-  int lastB = HIGH;
-  int lastA = HIGH;
+  int lastB = digitalRead(BTN_SELECT);
+  int lastA = digitalRead(BTN_BACK);
   bool exitMenu = false;
 
   while (!exitMenu) {

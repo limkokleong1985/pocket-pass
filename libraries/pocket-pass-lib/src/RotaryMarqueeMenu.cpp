@@ -31,6 +31,7 @@ void RotaryMarqueeMenu::begin(SimpleRotaryController& encoder,
 
   resetMarquee();
   resetSubMarquee();
+  LCD_Present();
 }
 
 void RotaryMarqueeMenu::loop() {
@@ -91,6 +92,7 @@ void RotaryMarqueeMenu::loop() {
 
   // Subtitle marquee tick
   maybeStartOrStepSubMarquee();
+  LCD_Present();
 }
 
 void RotaryMarqueeMenu::setMenu(const char* items[], uint8_t count) {
@@ -111,11 +113,13 @@ void RotaryMarqueeMenu::setMenu(const char* items[], uint8_t count) {
   drawVisibleWindow();
   resetMarquee();
   // Subtitle marquee independent, keep running
+  LCD_Present();
 }
 
 void RotaryMarqueeMenu::setTitle(const char* t) {
   title = t ? t : "";
   redrawHeader();
+  LCD_Present();
 }
 
 void RotaryMarqueeMenu::setSubTitle(const char* st) {
@@ -123,6 +127,7 @@ void RotaryMarqueeMenu::setSubTitle(const char* st) {
   // Reset subtitle marquee state whenever subtitle changes
   resetSubMarquee();
   redrawHeader();
+  LCD_Present();
 }
 
 void RotaryMarqueeMenu::setSelectedIndex(int8_t idx) {
@@ -153,6 +158,7 @@ void RotaryMarqueeMenu::setSelectedIndex(int8_t idx) {
 
   prevSelectedIndex = selectedIndex;
   resetMarquee();
+  LCD_Present();
 }
 
 void RotaryMarqueeMenu::redrawHeader() {
@@ -305,6 +311,7 @@ void RotaryMarqueeMenu::handleSelect(uint8_t index) {
   // After callback, ensure window is consistent (new menu/items/selection)
   ensureSelectionVisible();
   drawVisibleWindow();
+  LCD_Present();
 }
 
 void RotaryMarqueeMenu::handleBack() {
@@ -328,6 +335,7 @@ void RotaryMarqueeMenu::handleBack() {
 
   ensureSelectionVisible();
   drawVisibleWindow();
+  LCD_Present();
 }
 
 // ===== Row (menu items) Marquee =====
@@ -519,6 +527,7 @@ void RotaryMarqueeMenu::clearScreen(uint16_t bgColor) {
 
   // Keep prevSelectedIndex consistent
   prevSelectedIndex = selectedIndex;
+  LCD_Present();
 }
 
 // ===== Internal: wrap text and modal =====
@@ -609,11 +618,13 @@ bool RotaryMarqueeMenu::showInfoModal(const char* ttl,
   int8_t         prevSelIdx = selectedIndex;
 
   // Render
+  LCD_BeginFrame();
   clearScreen(BLACK);
   setTitle(ttl ? ttl : "");
   setSubTitle(sub ? sub : "");
   setMenu(itemsBuf, count);
   setSelectedIndex(0);
+  LCD_EndFrame();
 
   bool done = false;
   bool ok   = false;

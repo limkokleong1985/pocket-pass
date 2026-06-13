@@ -60,7 +60,7 @@ static constexpr const char* AUTH_LOCK_KEY = "pin_lock";
 #define EXPORT_JSON_PATH   "/export/data.json"
 #define EXPORT_README_PATH "/export/readme.md"
 
-const char* firmwareVersion = "v1.2.5";
+const char* firmwareVersion = "v1.2.6";
 
 // ECDSA P-256 public key (PEM) for firmware signature verification
 static const char ECDSA_P256_PUBLIC_KEY_PEM[] =

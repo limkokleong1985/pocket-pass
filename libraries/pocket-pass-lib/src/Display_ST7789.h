@@ -66,6 +66,9 @@ void LCD_addWindow(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t* ptr
 
 void LCD_Reset(void);
 void LCD_Init(void);
+void LCD_BeginFrame(void);
+void LCD_EndFrame(void);
+void LCD_Present(void);
 
 // Orientation control
 void LCD_SetOrientation(uint8_t rot);

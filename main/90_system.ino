@@ -62,10 +62,12 @@ static void mountSD() {
 }
 
 void drawLogo(){
+  LCD_BeginFrame();
   menu.setTitle("WELCOME");
   LCD_FillRect(47, 55, 219, 39, WHITE);
   drawStringWithPadding(57, 62, "Pocket Pass",WHITE, BLACK, 3,8, 4, false);
   drawStringWithPadding(17, 155, firmwareVersion,WHITE, BLACK, 2,8, 4, false);
+  LCD_EndFrame();
 }
 
 // ==== MSC Mode Helpers ====

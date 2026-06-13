@@ -72,6 +72,7 @@ void TextInputUI::begin(SimpleRotaryController& encoder) {
   drawStaticUI();
   drawInputText();
   drawScroller();
+  LCD_Present();
 }
 
 void TextInputUI::begin() {
@@ -95,6 +96,7 @@ void TextInputUI::begin() {
   drawStaticUI();
   drawInputText();
   drawScroller();
+  LCD_Present();
 }
 
 void TextInputUI::update() {
@@ -158,6 +160,7 @@ void TextInputUI::update() {
   }
 
   updateCursorBlink();
+  LCD_Present();
 }
 
 void TextInputUI::setInputInvert(bool invert) {
@@ -182,6 +185,7 @@ void TextInputUI::setMaxLen(uint8_t m) {
   _maxLen = (m <= MAX_CAP) ? m : MAX_CAP;
   if (_inputLen > _maxLen) { _inputLen = _maxLen; _buf[_inputLen] = '\0'; }
   drawRemainingLabel(); 
+  LCD_Present();
   //drawInputText();
 }
 
