@@ -15,10 +15,45 @@ static uint8_t  g_text_rot = 0;
 static bool     g_has_framebuffer = false;
 static bool     g_frame_dirty = false;
 static uint16_t g_frame_hold_depth = 0;
+static const UIColorPalette kPalettes[] = {
+  {"MONO",     0x0000, 0xFFFF, 0xC618, 0xFFFF, 0x0000},
+  {"MINT",     0x0322, 0xEFFF, 0x6F5A, 0x6F5A, 0x0322},
+  {"AMBER",    0x18C3, 0xFF9E, 0xFD20, 0xFD20, 0x18C3},
+  {"OCEAN",    0x0147, 0xD7FF, 0x2D7F, 0x2D7F, 0x0147},
+  {"ROSE",     0x2808, 0xFF5D, 0xF218, 0xF218, 0x2808},
+  {"TERMINAL", 0x0000, 0x87F0, 0x0400, 0x87F0, 0x0000},
+};
+static uint8_t g_palette_idx = 0;
 const uint16_t extraSpacing = TEXT_EXTRA_SPACING;
 
 uint16_t LCD_Width()  { return g_width; }
 uint16_t LCD_Height() { return g_height; }
+
+uint8_t UI_PaletteCount(void) {
+  return (uint8_t)(sizeof(kPalettes) / sizeof(kPalettes[0]));
+}
+
+const char* UI_PaletteName(uint8_t idx) {
+  return kPalettes[idx % UI_PaletteCount()].name;
+}
+
+uint8_t UI_GetPalette(void) {
+  return g_palette_idx;
+}
+
+void UI_SetPalette(uint8_t idx) {
+  g_palette_idx = (idx < UI_PaletteCount()) ? idx : 0;
+}
+
+const UIColorPalette& UI_GetPaletteDef(void) {
+  return kPalettes[g_palette_idx];
+}
+
+uint16_t UI_ColorBg(void) { return UI_GetPaletteDef().bg; }
+uint16_t UI_ColorFg(void) { return UI_GetPaletteDef().fg; }
+uint16_t UI_ColorAccent(void) { return UI_GetPaletteDef().accent; }
+uint16_t UI_ColorSelectedBg(void) { return UI_GetPaletteDef().selectedBg; }
+uint16_t UI_ColorSelectedFg(void) { return UI_GetPaletteDef().selectedFg; }
 
 static void markFrameDirty() {
   g_frame_dirty = true;
@@ -37,7 +72,7 @@ static void ensureFramebuffer() {
   framebuffer.setSwapBytes(false);
   g_has_framebuffer = framebuffer.createSprite(g_width, g_height) != nullptr;
   if (g_has_framebuffer) {
-    framebuffer.fillSprite(BLACK);
+    framebuffer.fillSprite(UI_ColorBg());
     markFrameDirty();
   }
 }
@@ -561,7 +596,7 @@ void LCD_Init(void) {
 
   LCD_SetOrientation(ORIENT_PORTRAIT);
   tft.invertDisplay(true);
-  tft.fillScreen(BLACK);
+  tft.fillScreen(UI_ColorBg());
 }
 
 void LCD_BeginFrame(void) {

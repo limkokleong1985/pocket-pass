@@ -58,6 +58,15 @@
 uint16_t LCD_Width();
 uint16_t LCD_Height();
 
+struct UIColorPalette {
+  const char* name;
+  uint16_t bg;
+  uint16_t fg;
+  uint16_t accent;
+  uint16_t selectedBg;
+  uint16_t selectedFg;
+};
+
 // Low-level no-ops kept for ABI compatibility
 void LCD_WriteCommand(uint8_t cmd);
 void LCD_WriteData(uint8_t data);
@@ -69,6 +78,17 @@ void LCD_Init(void);
 void LCD_BeginFrame(void);
 void LCD_EndFrame(void);
 void LCD_Present(void);
+
+uint8_t UI_PaletteCount(void);
+const char* UI_PaletteName(uint8_t idx);
+uint8_t UI_GetPalette(void);
+void UI_SetPalette(uint8_t idx);
+const UIColorPalette& UI_GetPaletteDef(void);
+uint16_t UI_ColorBg(void);
+uint16_t UI_ColorFg(void);
+uint16_t UI_ColorAccent(void);
+uint16_t UI_ColorSelectedBg(void);
+uint16_t UI_ColorSelectedFg(void);
 
 // Orientation control
 void LCD_SetOrientation(uint8_t rot);

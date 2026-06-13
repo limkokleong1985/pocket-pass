@@ -95,6 +95,21 @@ static bool db_begin()  { return db_exec("BEGIN TRANSACTION;"); }
 static bool db_commit() { return db_exec("COMMIT;"); }
 static bool db_rollback(){ return db_exec("ROLLBACK;"); }
 
+static bool db_config_has_palette_column() {
+  sqlite3_stmt* st = nullptr;
+  if (sqlite3_prepare_v2(g_db, "PRAGMA table_info(config);", -1, &st, nullptr) != SQLITE_OK) return false;
+  bool found = false;
+  while (sqlite3_step(st) == SQLITE_ROW) {
+    const unsigned char* name = sqlite3_column_text(st, 1);
+    if (name && strcmp(reinterpret_cast<const char*>(name), "palette") == 0) {
+      found = true;
+      break;
+    }
+  }
+  sqlite3_finalize(st);
+  return found;
+}
+
 static bool db_init_schema() {
   const char* sqls[] = {
     "CREATE TABLE IF NOT EXISTS meta ("
@@ -115,7 +130,8 @@ static bool db_init_schema() {
       "uppercase INTEGER,"
       "lowercase INTEGER,"
       "number INTEGER,"
-      "symbol INTEGER"
+      "symbol INTEGER,"
+      "palette INTEGER DEFAULT 0"
     ");",
     "CREATE TABLE IF NOT EXISTS categories ("
       "id INTEGER PRIMARY KEY AUTOINCREMENT,"
@@ -403,7 +419,7 @@ static bool saveItems() {
 static bool loadConfig() {
   Serial.println("[IO] loadConfig (DB)");
   if (!db_open()) return false;
-  const char* sql = "SELECT uppercase, lowercase, number, symbol FROM config LIMIT 1;";
+  const char* sql = "SELECT uppercase, lowercase, number, symbol, palette FROM config LIMIT 1;";
   sqlite3_stmt* st = nullptr;
   int rc = sqlite3_prepare_v2(g_db, sql, -1, &st, nullptr);
   if (rc != SQLITE_OK) return false;
@@ -427,17 +443,19 @@ static bool saveConfig() {
   if (!db_open()) return false;
   if (!db_begin()) return false;
   if (!db_exec("DELETE FROM config;")) { db_rollback(); return false; }
-  const char* sql = "INSERT INTO config(uppercase, lowercase, number, symbol) VALUES (?, ?, ?, ?);";
+  const char* sql = "INSERT INTO config(uppercase, lowercase, number, symbol, palette) VALUES (?, ?, ?, ?, ?);";
   sqlite3_stmt* st = nullptr;
   if (sqlite3_prepare_v2(g_db, sql, -1, &st, nullptr) != SQLITE_OK) { db_rollback(); return false; }
   sqlite3_bind_int(st, 1, (int)g_settings.uppercase);
   sqlite3_bind_int(st, 2, (int)g_settings.lowercase);
   sqlite3_bind_int(st, 3, (int)g_settings.number);
   sqlite3_bind_int(st, 4, (int)g_settings.symbol);
+  sqlite3_bind_int(st, 5, (int)g_settings.palette);
   int rc = sqlite3_step(st);
   sqlite3_finalize(st);
   if (rc != SQLITE_DONE) { db_rollback(); return false; }
   if (!db_commit()) { db_rollback(); return false; }
+  UI_SetPalette(g_settings.palette);
   Serial.println("[IO] saveConfig OK");
   return true;
 }

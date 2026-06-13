@@ -19,7 +19,7 @@ void RotaryMarqueeMenu::begin(SimpleRotaryController& encoder,
   LCD_Init();
   Set_Backlight(backlight);
   LCD_SetOrientation(lcdOrientation);
-  LCD_Clear(BLACK);
+  LCD_Clear(UI_ColorBg());
 
   calcRowMetrics();
   drawStaticUI();
@@ -162,24 +162,26 @@ void RotaryMarqueeMenu::setSelectedIndex(int8_t idx) {
 }
 
 void RotaryMarqueeMenu::redrawHeader() {
-  // Clear header band and redraw stripes and text
-  LCD_FillRect(0, startY - 2, LCD_Width(), 46, BLACK);
-  LCD_DrawLine(0, startY + 8,  LCD_Width() - 1, startY + 8,  WHITE);
-  LCD_DrawLine(0, startY + 10, LCD_Width() - 1, startY + 10, WHITE);
+  const uint16_t bg = UI_ColorBg();
+  const uint16_t fg = UI_ColorFg();
+  const uint16_t accent = UI_ColorAccent();
 
-  // Title
+  // Clear header band and redraw stripes and text
+  LCD_FillRect(0, startY - 2, LCD_Width(), 46, bg);
+  LCD_DrawLine(0, startY + 8,  LCD_Width() - 1, startY + 8,  accent);
+  LCD_DrawLine(0, startY + 10, LCD_Width() - 1, startY + 10, accent);
+
   if (!title.isEmpty()) {
-    drawStringWithPadding(startX + 7, startY, title.c_str(), WHITE, BLACK, 2, 8, 4, false);
+    drawStringWithPadding(startX + 7, startY, title.c_str(), fg, bg, 2, 8, 4, false);
   }
 
-  // Subtitle
   uint16_t subY = startY + 25;
-  LCD_FillRect(startX + 20, subY, LCD_Width() - (startX + 20), 20, BLACK); // clear subtitle area first
+  LCD_FillRect(startX + 20, subY, LCD_Width() - (startX + 20), 20, bg);
   if (!subTitle.isEmpty()) {
     if ((uint16_t)subTitle.length() <= subMarqueeThreshold) {
-      drawStringWithPadding(startX + 20, subY, subTitle.c_str(), WHITE, BLACK, 2, 8, 4, false);
+      drawStringWithPadding(startX + 20, subY, subTitle.c_str(), fg, bg, 2, 8, 4, false);
     } else {
-      drawSubtitleFrame(); // first marquee frame handles long subtitle
+      drawSubtitleFrame();
     }
   }
 }
@@ -197,28 +199,27 @@ void RotaryMarqueeMenu::calcRowMetrics() {
 }
 
 void RotaryMarqueeMenu::drawStaticUI() {
-  // Header lines
-  LCD_DrawLine(0, startY + 8,  LCD_Width() - 1, startY + 8,  WHITE);
-  LCD_DrawLine(0, startY + 10, LCD_Width() - 1, startY + 10, WHITE);
+  const uint16_t bg = UI_ColorBg();
+  const uint16_t fg = UI_ColorFg();
+  const uint16_t accent = UI_ColorAccent();
 
-  // Title (skip when empty)
+  LCD_DrawLine(0, startY + 8,  LCD_Width() - 1, startY + 8,  accent);
+  LCD_DrawLine(0, startY + 10, LCD_Width() - 1, startY + 10, accent);
+
   if (!title.isEmpty()) {
-    drawStringWithPadding(startX + 7, startY, title.c_str(), WHITE, BLACK, 2, 8, 4, false);
+    drawStringWithPadding(startX + 7, startY, title.c_str(), fg, bg, 2, 8, 4, false);
   }
 
-  // Subtitle (skip when empty)
   if (!subTitle.isEmpty()) {
     if ((uint16_t)subTitle.length() <= subMarqueeThreshold) {
-      drawStringWithPadding(startX + 20, startY + 25, subTitle.c_str(), WHITE, BLACK, 2, 8, 4, false);
+      drawStringWithPadding(startX + 20, startY + 25, subTitle.c_str(), fg, bg, 2, 8, 4, false);
     } else {
-      // Clear area; first marquee frame will draw when ticking
       uint16_t subY = startY + 25;
-      LCD_FillRect(startX + 20, subY, LCD_Width() - (startX + 20), 20, BLACK);
+      LCD_FillRect(startX + 20, subY, LCD_Width() - (startX + 20), 20, bg);
     }
   } else {
-    // Ensure subtitle area is cleared when empty
     uint16_t subY = startY + 25;
-    LCD_FillRect(startX + 20, subY, LCD_Width() - (startX + 20), 20, BLACK);
+    LCD_FillRect(startX + 20, subY, LCD_Width() - (startX + 20), 20, bg);
   }
 }
 
@@ -229,23 +230,27 @@ void RotaryMarqueeMenu::drawVisibleWindow() {
       bool sel = (absIdx == selectedIndex);
       drawVisibleItem(vis, absIdx, sel);
     } else {
-      clearRow(vis, BLACK);
+      clearRow(vis, UI_ColorBg());
     }
   }
 }
 
 void RotaryMarqueeMenu::drawVisibleItem(uint8_t visRow, uint8_t absIndex, bool selected) {
-  clearRow(visRow, selected ? WHITE : BLACK); // selected rows WHITE BG for inverted text
+  const uint16_t bg = UI_ColorBg();
+  const uint16_t fg = UI_ColorFg();
+  const uint16_t selectedBg = UI_ColorSelectedBg();
+  const uint16_t selectedFg = UI_ColorSelectedFg();
+
+  clearRow(visRow, selected ? selectedBg : bg);
   uint16_t y = rowY(visRow);
 
-  // Cursor
-  drawStringWithPadding(mStartX, y, selected ? "> " : "  ", WHITE, BLACK, 2, 8, 4, false);
+  drawStringWithPadding(mStartX, y, selected ? "> " : "  ", fg, bg, 2, 8, 4, false);
 
   const char* label = itemAt(absIndex);
   if (selected) {
-    drawStringWithPadding(MENU_TEXT_X, y, label, BLACK, WHITE, 2, 8, 4, false);
+    drawStringWithPadding(MENU_TEXT_X, y, label, selectedFg, selectedBg, 2, 8, 4, false);
   } else {
-    drawStringWithPadding(MENU_TEXT_X, y, label, WHITE, BLACK, 2, 8, 4, false);
+    drawStringWithPadding(MENU_TEXT_X, y, label, fg, bg, 2, 8, 4, false);
   }
 }
 
@@ -408,15 +413,14 @@ void RotaryMarqueeMenu::drawSelectedWithMarquee(uint8_t visRow) {
   buf[n] = '\0';
 
   // Clear only text area with WHITE (selected bg), keep cursor area
-  clearTextArea(visRow, WHITE);
+  clearTextArea(visRow, UI_ColorSelectedBg());
 
   uint16_t y = rowY(visRow);
 
   // Ensure cursor is visible
-  drawStringWithPadding(mStartX, y, "> ", WHITE, BLACK, 2, 8, 4, false);
+  drawStringWithPadding(mStartX, y, "> ", UI_ColorFg(), UI_ColorBg(), 2, 8, 4, false);
 
-  // Draw marquee slice (inverted)
-  drawStringWithPadding(MENU_TEXT_X, y, buf, BLACK, WHITE, 2, 8, 4, false);
+  drawStringWithPadding(MENU_TEXT_X, y, buf, UI_ColorSelectedFg(), UI_ColorSelectedBg(), 2, 8, 4, false);
 }
 
 // ===== Subtitle Marquee =====
@@ -473,11 +477,11 @@ void RotaryMarqueeMenu::drawSubtitleFrame() {
   uint16_t y = startY + 25;
 
   // Clear the subtitle text area (keep header background as BLACK)
-  LCD_FillRect(x, y, LCD_Width() - x, 20, BLACK);
+  LCD_FillRect(x, y, LCD_Width() - x, 20, UI_ColorBg());
 
   // If short, just draw normally
   if ((uint16_t)subTitle.length() <= subMarqueeThreshold) {
-    drawStringWithPadding(x, y, subTitle.c_str(), WHITE, BLACK, 2, 8, 4, false);
+    drawStringWithPadding(x, y, subTitle.c_str(), UI_ColorFg(), UI_ColorBg(), 2, 8, 4, false);
     return;
   }
 
@@ -499,15 +503,13 @@ void RotaryMarqueeMenu::drawSubtitleFrame() {
   }
   buf[windowChars] = '\0';
 
-  drawStringWithPadding(x, y, buf, WHITE, BLACK, 2, 8, 4, false);
+  drawStringWithPadding(x, y, buf, UI_ColorFg(), UI_ColorBg(), 2, 8, 4, false);
 }
 
 void RotaryMarqueeMenu::clearScreen(uint16_t bgColor) {
-  // Clear the entire screen
+  if (bgColor == BLACK) bgColor = UI_ColorBg();
   LCD_Clear(bgColor);
-
-  // Keep header area BLACK for readability
-  LCD_FillRect(0, startY - 2, LCD_Width(), 46, BLACK);
+  LCD_FillRect(0, startY - 2, LCD_Width(), 46, bgColor);
 
   // Recompute row metrics in case dimensions/orientation changed
   calcRowMetrics();
@@ -619,7 +621,7 @@ bool RotaryMarqueeMenu::showInfoModal(const char* ttl,
 
   // Render
   LCD_BeginFrame();
-  clearScreen(BLACK);
+  clearScreen(UI_ColorBg());
   setTitle(ttl ? ttl : "");
   setSubTitle(sub ? sub : "");
   setMenu(itemsBuf, count);

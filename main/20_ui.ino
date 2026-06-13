@@ -810,6 +810,9 @@ static void MENU_OnSelect(uint8_t idx, const char* label) {
       if (L.startsWith("[ PASSWORD SETTING ]")) {
         g_state = UiState::Settings_Password;
         g_menu_done = true;
+      } else if (L.startsWith("[ PALETTE ")) {
+        g_state = UiState::Settings_Palette;
+        g_menu_done = true;
       } else if (L == "[ IMPORT ]") {
         // New: prepare /import + template and reboot into MSC mode
         settingsImportExcel();
@@ -973,6 +976,22 @@ static void MENU_OnSelect(uint8_t idx, const char* label) {
       }
     } break;
 
+    case MenuContext::Settings_Palette: {
+      if (L == "[ BACK ]") {
+        g_state = UiState::Settings;
+        g_menu_done = true;
+        break;
+      }
+      if (idx < UI_PaletteCount()) {
+        g_settings.palette = idx;
+        UI_SetPalette(idx);
+        saveConfig();
+        waitForButtonB("Info", "Palette saved", "OK");
+        settingsPaletteMenu();
+        return;
+      }
+    } break;
+
     default: break;
   }
 }
@@ -997,6 +1016,10 @@ static void MENU_OnBack() {
     break;
 
     case MenuContext::Settings_Password:
+      g_state = UiState::Settings; g_menu_done = true;
+    break;
+
+    case MenuContext::Settings_Palette:
       g_state = UiState::Settings; g_menu_done = true;
     break;
 
@@ -1350,8 +1373,11 @@ static void settingsMenu() {
   menu.setTitle("Setting");
   menu.setSubTitle(firmwareVersion);
 
- const char* items[] = {
+  static char paletteBuf[32];
+  snprintf(paletteBuf, sizeof(paletteBuf), "[ PALETTE %s ]", UI_PaletteName(g_settings.palette));
+  const char* items[] = {
     "[ PASSWORD SETTING ]",
+    paletteBuf,
     "[ IMPORT ]",
     "[ EXPORT ]",
     "[ UPDATE SECURITY ]",
@@ -1362,7 +1388,7 @@ static void settingsMenu() {
     "[ CREDITS ]",
     "[ BACK ]"
   };
-  menu.setMenu(items, 10);
+  menu.setMenu(items, 11);
   menu.setSelectedIndex(0);
   g_menuCtx = MenuContext::Settings;
   g_menu_done = false;
@@ -1376,6 +1402,7 @@ static void settingsMenu() {
 
   if (g_state == UiState::MainMenu) buildAndShowMainMenu();
   else if (g_state == UiState::Settings_Password) settingsPasswordMenu();
+  else if (g_state == UiState::Settings_Palette) settingsPaletteMenu();
 }
 
 static void settingsPasswordMenu() {
@@ -1393,6 +1420,38 @@ static void settingsPasswordMenu() {
   menu.setMenu(items, 5);
   menu.setSelectedIndex(0);
   g_menuCtx = MenuContext::Settings_Password;
+  g_menu_done = false;
+  menu.setOnSelect(MENU_OnSelect);
+  menu.setOnBack(MENU_OnBack);
+
+  while (!g_menu_done) menuLoopAuto();
+
+  menu.setOnSelect(nullptr);
+  menu.setOnBack(nullptr);
+
+  if (g_state == UiState::Settings) settingsMenu();
+}
+
+static void settingsPaletteMenu() {
+  Serial.println("[UI] settingsPaletteMenu");
+  menu.clearScreen(BLACK);
+  menu.setTitle("Color palette");
+  menu.setSubTitle("Choose a theme");
+
+  static String labelsStr[8];
+  static const char* items[8];
+  uint8_t count = UI_PaletteCount();
+  for (uint8_t i = 0; i < count; ++i) {
+    labelsStr[i] = (i == g_settings.palette) ? String("* ") + UI_PaletteName(i) : UI_PaletteName(i);
+    items[i] = labelsStr[i].c_str();
+  }
+  labelsStr[count] = "[ BACK ]";
+  items[count] = labelsStr[count].c_str();
+  ++count;
+
+  menu.setMenu(items, count);
+  menu.setSelectedIndex(g_settings.palette);
+  g_menuCtx = MenuContext::Settings_Palette;
   g_menu_done = false;
   menu.setOnSelect(MENU_OnSelect);
   menu.setOnBack(MENU_OnBack);

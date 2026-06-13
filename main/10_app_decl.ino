@@ -79,7 +79,8 @@ enum class UiState : uint8_t {
   MainMenu,
   CategoryScreen,
   Settings,
-  Settings_Password
+  Settings_Password,
+  Settings_Palette
 };
 
 // ==== Menu contexts ====
@@ -89,7 +90,8 @@ enum class MenuContext : uint8_t {
   CategoryScreen_Main,
   CategoryScreen_PwdSub,
   Settings,
-  Settings_Password
+  Settings_Password,
+  Settings_Palette
 };
 
 struct ReturnState {
@@ -136,6 +138,7 @@ struct PwSettings {
   uint8_t lowercase = 4;
   uint8_t number    = 3;
   uint8_t symbol    = 3;
+  uint8_t palette   = 0;
 };
 
 // ==== Security / Crypto Meta ====
@@ -216,6 +219,7 @@ static void buildAndShowMainMenu();
 static void categoryScreen(size_t cidx);
 static void settingsMenu();
 static void settingsPasswordMenu();
+static void settingsPaletteMenu();
 
 // UI helpers
 static void showLoading(const char* title = "LOADING", const char* subtitle = nullptr);
