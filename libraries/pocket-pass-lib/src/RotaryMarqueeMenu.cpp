@@ -164,12 +164,10 @@ void RotaryMarqueeMenu::setSelectedIndex(int8_t idx) {
 void RotaryMarqueeMenu::redrawHeader() {
   const uint16_t bg = UI_ColorBg();
   const uint16_t fg = UI_ColorFg();
-  const uint16_t accent = UI_ColorAccent();
-
   // Clear header band and redraw stripes and text
   LCD_FillRect(0, startY - 2, LCD_Width(), 46, bg);
-  LCD_DrawLine(0, startY + 8,  LCD_Width() - 1, startY + 8,  accent);
-  LCD_DrawLine(0, startY + 10, LCD_Width() - 1, startY + 10, accent);
+  LCD_DrawLine(0, startY + 8,  LCD_Width() - 1, startY + 8,  fg);
+  LCD_DrawLine(0, startY + 10, LCD_Width() - 1, startY + 10, fg);
 
   if (!title.isEmpty()) {
     drawStringWithPadding(startX + 7, startY, title.c_str(), fg, bg, 2, 8, 4, false);
@@ -201,10 +199,8 @@ void RotaryMarqueeMenu::calcRowMetrics() {
 void RotaryMarqueeMenu::drawStaticUI() {
   const uint16_t bg = UI_ColorBg();
   const uint16_t fg = UI_ColorFg();
-  const uint16_t accent = UI_ColorAccent();
-
-  LCD_DrawLine(0, startY + 8,  LCD_Width() - 1, startY + 8,  accent);
-  LCD_DrawLine(0, startY + 10, LCD_Width() - 1, startY + 10, accent);
+  LCD_DrawLine(0, startY + 8,  LCD_Width() - 1, startY + 8,  fg);
+  LCD_DrawLine(0, startY + 10, LCD_Width() - 1, startY + 10, fg);
 
   if (!title.isEmpty()) {
     drawStringWithPadding(startX + 7, startY, title.c_str(), fg, bg, 2, 8, 4, false);
@@ -244,7 +240,7 @@ void RotaryMarqueeMenu::drawVisibleItem(uint8_t visRow, uint8_t absIndex, bool s
   clearRow(visRow, selected ? selectedBg : bg);
   uint16_t y = rowY(visRow);
 
-  drawStringWithPadding(mStartX, y, selected ? "> " : "  ", fg, bg, 2, 8, 4, false);
+  drawString(mStartX, y, selected ? "> " : "", selected ? selectedFg : fg, selected ? selectedBg : bg, 2, false);
 
   const char* label = itemAt(absIndex);
   if (selected) {
@@ -418,7 +414,7 @@ void RotaryMarqueeMenu::drawSelectedWithMarquee(uint8_t visRow) {
   uint16_t y = rowY(visRow);
 
   // Ensure cursor is visible
-  drawStringWithPadding(mStartX, y, "> ", UI_ColorFg(), UI_ColorBg(), 2, 8, 4, false);
+  drawString(mStartX, y, "> ", UI_ColorSelectedFg(), UI_ColorSelectedBg(), 2, false);
 
   drawStringWithPadding(MENU_TEXT_X, y, buf, UI_ColorSelectedFg(), UI_ColorSelectedBg(), 2, 8, 4, false);
 }

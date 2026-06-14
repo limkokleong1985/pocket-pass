@@ -15,13 +15,23 @@ static uint8_t  g_text_rot = 0;
 static bool     g_has_framebuffer = false;
 static bool     g_frame_dirty = false;
 static uint16_t g_frame_hold_depth = 0;
+// Soft, low-saturation RGB565 palettes intended for small ST7789 displays.
+// Order: name, background, foreground, accent, selected background, selected foreground.
 static const UIColorPalette kPalettes[] = {
-  {"MONO",     0x0000, 0xFFFF, 0xC618, 0xFFFF, 0x0000},
-  {"MINT",     0x0322, 0xEFFF, 0x6F5A, 0x6F5A, 0x0322},
-  {"AMBER",    0x18C3, 0xFF9E, 0xFD20, 0xFD20, 0x18C3},
-  {"OCEAN",    0x0147, 0xD7FF, 0x2D7F, 0x2D7F, 0x0147},
-  {"ROSE",     0x2808, 0xFF5D, 0xF218, 0xF218, 0x2808},
-  {"TERMINAL", 0x1126, 0xB7BF, 0x42CF, 0xB7BF, 0x1126},
+  {"TERMINAL",   0x1126, 0xB7BF, 0x2A69, 0xB7BF, 0x1126}, // deep blue CRT
+  {"MONO",       0x2104, 0xDEDB, 0x7BEF, 0xBDF7, 0x2104}, // neutral grayscale
+  {"ICE",        0x09AF, 0xE71C, 0x3D7D, 0xB69B, 0x0830}, // cold cyan
+  {"AMBER",      0x18C3, 0xFF5D, 0xFDC0, 0xFF3C, 0x18C3}, // amber phosphor
+  {"MATRIX",     0x0140, 0x87F0, 0x03E0, 0x6FEA, 0x0140}, // green phosphor
+  {"DRACULA",    0x280A, 0xF79F, 0xC47A, 0xD69A, 0x2008}, // violet terminal
+  {"SOLARIZED",  0x224A, 0xEEB7, 0x6C95, 0xCDB6, 0x1A08}, // solarized dark
+  {"OCEAN",      0x0147, 0xD7FF, 0x2D7F, 0x86FF, 0x012D}, // ocean blue
+  {"CYBER",      0x300A, 0xFF7D, 0xF81F, 0xFD9F, 0x2808}, // magenta neon
+  {"RED_ALERT",  0x2000, 0xFE79, 0xF800, 0xFD14, 0x1800}, // alert red
+  {"PAPER",      0xFF9A, 0x4208, 0xA4E9, 0xEED3, 0x3186}, // warm paper
+  {"SEPIA",      0x38E3, 0xF6B7, 0xBC69, 0xD54D, 0x3002}, // sepia print
+  {"SAGE",       0x2A69, 0xEF7D, 0x7DF1, 0xBEF7, 0x1A08}, // muted sage
+  {"LILAC",      0x39CF, 0xF79F, 0xD63F, 0xE73C, 0x292C}, // lilac CRT
 };
 static uint8_t g_palette_idx = 0;
 const uint16_t extraSpacing = TEXT_EXTRA_SPACING;
@@ -56,29 +66,54 @@ uint16_t UI_ColorSelectedBg(void) { return UI_GetPaletteDef().selectedBg; }
 uint16_t UI_ColorSelectedFg(void) { return UI_GetPaletteDef().selectedFg; }
 
 static bool uiHasRetroBackdrop() {
-  return strcmp(UI_PaletteName(UI_GetPalette()), "TERMINAL") == 0;
+  return true;
+}
+
+// Blend two RGB565 colours. amountB: 0 = colour A, 255 = colour B.
+static uint16_t blend565(uint16_t a, uint16_t b, uint8_t amountB) {
+  const uint16_t amountA = (uint16_t)(255U - amountB);
+  const uint16_t ar = (a >> 11) & 0x1F;
+  const uint16_t ag = (a >> 5)  & 0x3F;
+  const uint16_t ab =  a        & 0x1F;
+  const uint16_t br = (b >> 11) & 0x1F;
+  const uint16_t bg = (b >> 5)  & 0x3F;
+  const uint16_t bb =  b        & 0x1F;
+
+  const uint16_t r = (uint16_t)((ar * amountA + br * amountB + 127U) / 255U);
+  const uint16_t g = (uint16_t)((ag * amountA + bg * amountB + 127U) / 255U);
+  const uint16_t bl = (uint16_t)((ab * amountA + bb * amountB + 127U) / 255U);
+  return (uint16_t)((r << 11) | (g << 5) | bl);
+}
+
+template <typename TCanvas>
+static void fillBackdropRect(TCanvas& canvas, uint16_t x, uint16_t y, uint16_t w, uint16_t h) {
+  if (w == 0 || h == 0) return;
+
+  const uint16_t bg = UI_ColorBg();
+  // Keep the CRT texture close to the background. Using accent directly creates
+  // harsh stripes and substantially reduces text readability.
+  const uint16_t scanline = blend565(bg, UI_ColorAccent(), 18); // ~7% accent
+  const uint16_t grain    = blend565(bg, UI_ColorAccent(), 30); // ~12% accent
+
+  canvas.fillRect(x, y, w, h, bg);
+
+  // Sparse, faint scanlines rather than a strong line every few pixels.
+  const uint32_t bottom = (uint32_t)y + h;
+  const uint32_t right = (uint32_t)x + w;
+  for (uint32_t yy = y + 3U; yy < bottom; yy += 8U) {
+    canvas.drawFastHLine(x, (uint16_t)yy, w, scanline);
+  }
+
+  // Very light deterministic phosphor/grain dots.
+  for (uint32_t yy = y + 5U; yy < bottom; yy += 17U) {
+    const uint16_t px = (uint16_t)(x + ((yy * 11U + x * 3U) % w));
+    if ((uint32_t)px < right) canvas.drawPixel(px, (uint16_t)yy, grain);
+  }
 }
 
 template <typename TCanvas>
 static void drawRetroBackdrop(TCanvas& canvas, uint16_t w, uint16_t h) {
-  const uint16_t bg = UI_ColorBg();
-  const uint16_t accent = UI_ColorAccent();
-  const uint16_t fg = UI_ColorFg();
-
-  canvas.fillScreen(bg);
-
-  for (uint16_t y = 0; y < h; y += 4) {
-    canvas.drawFastHLine(0, y, w, accent);
-  }
-  for (uint16_t y = 2; y < h; y += 4) {
-    canvas.drawFastHLine(0, y, w, bg);
-  }
-  for (uint16_t x = 8; x < w; x += 24) {
-    canvas.drawFastVLine(x, 0, h, accent);
-  }
-
-  canvas.drawRect(2, 2, w - 4, h - 4, fg);
-  canvas.drawRect(6, 6, w - 12, h - 12, accent);
+  fillBackdropRect(canvas, 0, 0, w, h);
 }
 
 static void markFrameDirty() {
@@ -111,7 +146,10 @@ static void configureTextCanvas(TCanvas& canvas,
                                 uint8_t size) {
   canvas.setTextFont(1);
   canvas.setTextSize(size);
-  canvas.setTextColor(color, bg);
+  // Normal text over the retro backdrop must be transparent. Otherwise
+  // TFT_eSPI paints a solid rectangle behind every glyph.
+  if (uiHasRetroBackdrop() && bg == UI_ColorBg()) canvas.setTextColor(color);
+  else canvas.setTextColor(color, bg);
   canvas.setTextDatum(TL_DATUM);
 }
 
@@ -177,9 +215,13 @@ static void drawStringWithPaddingImpl(TCanvas& canvas,
   uint16_t boxY = (y > padY) ? (uint16_t)(y - padY) : 0;
   uint16_t boxW = (uint16_t)(textW + 2 * padX);
   uint16_t boxH = (uint16_t)(textH + 2 * padY);
-  canvas.fillRect(boxX, boxY, boxW, boxH, bgColor);
+  if (uiHasRetroBackdrop() && bgColor == UI_ColorBg()) fillBackdropRect(canvas, boxX, boxY, boxW, boxH);
+  else canvas.fillRect(boxX, boxY, boxW, boxH, bgColor);
 
-  canvas.setTextColor(fgColor, bgColor);
+  // The area was already restored above. Draw transparently when it is the
+  // normal retro background so the scanlines remain visible around glyphs.
+  if (uiHasRetroBackdrop() && bgColor == UI_ColorBg()) canvas.setTextColor(fgColor);
+  else canvas.setTextColor(fgColor, bgColor);
   canvas.setTextDatum(TL_DATUM);
   canvas.drawString(str, x, y);
 }
@@ -681,8 +723,14 @@ void LCD_FillRect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color
   if (x >= g_width || y >= g_height) return;
   if (x + w > g_width) w = g_width - x;
   if (y + h > g_height) h = g_height - y;
-  if (g_has_framebuffer) framebuffer.fillRect(x, y, w, h, color);
-  else tft.fillRect(x, y, w, h, color);
+  const bool useBackdrop = uiHasRetroBackdrop() && color == UI_ColorBg();
+  if (g_has_framebuffer) {
+    if (useBackdrop) fillBackdropRect(framebuffer, x, y, w, h);
+    else framebuffer.fillRect(x, y, w, h, color);
+  } else {
+    if (useBackdrop) fillBackdropRect(tft, x, y, w, h);
+    else tft.fillRect(x, y, w, h, color);
+  }
   markFrameDirty();
 }
 

@@ -987,8 +987,9 @@ static void MENU_OnSelect(uint8_t idx, const char* label) {
         UI_SetPalette(idx);
         saveConfig();
         waitForButtonB("Info", "Palette saved", "OK");
-        settingsPaletteMenu();
-        return;
+        g_state = UiState::Settings_Palette;
+        g_menu_done = true;
+        break;
       }
     } break;
 
@@ -1430,6 +1431,7 @@ static void settingsPasswordMenu() {
   menu.setOnBack(nullptr);
 
   if (g_state == UiState::Settings) settingsMenu();
+  else if (g_state == UiState::Settings_Palette) settingsPaletteMenu();
 }
 
 static void settingsPaletteMenu() {
@@ -1438,9 +1440,11 @@ static void settingsPaletteMenu() {
   menu.setTitle("Color palette");
   menu.setSubTitle("Choose a theme");
 
-  static String labelsStr[8];
-  static const char* items[8];
-  uint8_t count = UI_PaletteCount();
+  const uint8_t paletteCount = UI_PaletteCount();
+  static String labelsStr[32];
+  static const char* items[32];
+  uint8_t count = paletteCount;
+  if (count > 31) count = 31;
   for (uint8_t i = 0; i < count; ++i) {
     labelsStr[i] = (i == g_settings.palette) ? String("* ") + UI_PaletteName(i) : UI_PaletteName(i);
     items[i] = labelsStr[i].c_str();
@@ -1462,5 +1466,6 @@ static void settingsPaletteMenu() {
   menu.setOnBack(nullptr);
 
   if (g_state == UiState::Settings) settingsMenu();
+  else if (g_state == UiState::Settings_Palette) settingsPaletteMenu();
 }
 

@@ -222,11 +222,9 @@ void TextInputUI::clear() {
 void TextInputUI::drawStaticUI() {
   const uint16_t bg = UI_ColorBg();
   const uint16_t fg = UI_ColorFg();
-  const uint16_t accent = UI_ColorAccent();
-
   LCD_Clear(bg);
-  LCD_DrawLine(0, _layout.startY + 8,  LCD_Width() - 1, _layout.startY + 8,  accent);
-  LCD_DrawLine(0, _layout.startY + 10, LCD_Width() - 1, _layout.startY + 10, accent);
+  LCD_DrawLine(0, _layout.startY + 8,  LCD_Width() - 1, _layout.startY + 8,  fg);
+  LCD_DrawLine(0, _layout.startY + 10, LCD_Width() - 1, _layout.startY + 10, fg);
 
   if (_title && *_title) {
     drawStringWithPadding(_layout.startX + 7, _layout.startY,
@@ -237,13 +235,13 @@ void TextInputUI::drawStaticUI() {
                         _description, fg, bg, 2, _layout.scrollPickX - 25);
   }
 
-  LCD_DrawLine(0, _layout.inputStartY, LCD_Width() - 1, _layout.inputStartY, accent);
+  LCD_DrawLine(0, _layout.inputStartY, LCD_Width() - 1, _layout.inputStartY, fg);
   drawRemainingLabel();
   drawStringWithPadding(_layout.inputStartX, _layout.inputStartY + 15,
                         "> ", fg, bg, 2, 8, 4, false);
 
   LCD_FillRect(_layout.scrollPickX, 0, LCD_Width() - _layout.scrollPickX, LCD_Height(), bg);
-  LCD_DrawLine(_layout.scrollPickX, 0, _layout.scrollPickX, LCD_Height(), accent);
+  LCD_DrawLine(_layout.scrollPickX, 0, _layout.scrollPickX, LCD_Height(), fg);
 }
 
 void TextInputUI::drawInputText() {
