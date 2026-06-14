@@ -4,7 +4,7 @@ Pocket Pass is a small **offline hardware password manager** built on ESP32‑S3
 It stores your secrets on a microSD card, protects them with **AES‑256‑GCM** and a **6‑digit passcode**, and acts as a **USB keyboard** to type passwords into your computer.  
 No Wi‑Fi, no cloud, no telemetry – everything stays on your device.
 
-> Firmware version: `v1.2.1`  
+> Firmware version: `v1.2.6`  
 > License: Apache‑2.0 (see `license.txt`)
 
 ---
@@ -41,6 +41,7 @@ No Wi‑Fi, no cloud, no telemetry – everything stays on your device.
 
 ### Vault & Password Management
 
+- **Selectable UI palettes** with persistent theme selection.
 - **Categories & items:**
   - Up to **60 categories**.
   - Up to **60 passwords per category**.
@@ -54,11 +55,12 @@ No Wi‑Fi, no cloud, no telemetry – everything stays on your device.
     - Lowercase letters
     - Numbers
     - Symbols
-  - Generated passwords are shuffled for better entropy distribution.
+  - Auto-generated symbols are limited to a compatibility-safe set: `! @ # _ . -`
+- Generated passwords are shuffled for better entropy distribution.
 
 ### User Interface & UX
 
-- **Display:** ST7789 TFT display with simple menu UI.
+- **Display:** ST7789 TFT display with simple menu UI, selectable color palettes, and reduced flicker from buffered frame presentation.
 - **Input:**
   - Rotary encoder for navigation.
   - Multiple buttons: Back, Select, Up, Down.
