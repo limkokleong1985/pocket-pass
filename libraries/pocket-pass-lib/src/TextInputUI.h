@@ -39,6 +39,7 @@ public:
   void begin(SimpleRotaryController& encoder);
   void begin();    // only if constructed with encoder reference
   void update();
+  bool consumeInteraction();
 
   void setTitle(const char* t);
   void setDescription(const char* d);
@@ -82,6 +83,7 @@ private:
   uint8_t _inputLen = 0;
 
   bool _cursorVisible = true;
+  bool _hadInteraction = false;
   unsigned long _lastBlinkMs = 0;
   static const unsigned long BLINK_INTERVAL_MS = 500;
 

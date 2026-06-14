@@ -102,25 +102,24 @@ void TextInputUI::begin() {
 void TextInputUI::update() {
   if (!_encPtr) return;
 
+  _hadInteraction = false;
   _encPtr->update();
 
   // Rotary scroller
   uint8_t n = modeCount(_pickerMode);
   bool changed = false;
   if (n > 1) {
-    if (_encPtr->wasTurnedCCW())  { 
-      if(_inputInvert)
-        _activeIndex++;
-      else
-        _activeIndex--;
-      changed = true; 
+    if (_encPtr->wasTurnedCCW())  {
+      if (_inputInvert) _activeIndex++;
+      else _activeIndex--;
+      changed = true;
+      _hadInteraction = true;
     }
-    if (_encPtr->wasTurnedCW()) { 
-       if(_inputInvert)
-        _activeIndex--;
-      else
-        _activeIndex++;
-      changed = true; 
+    if (_encPtr->wasTurnedCW()) {
+      if (_inputInvert) _activeIndex--;
+      else _activeIndex++;
+      changed = true;
+      _hadInteraction = true;
     }
     if (changed) {
       int16_t m = static_cast<int16_t>(n);
@@ -137,6 +136,7 @@ void TextInputUI::update() {
   // Buttons and modes
   if (_inputMode == InputMode::PASSCODE) {
     if (_encPtr->wasPressedA()) {
+      _hadInteraction = true;
       if (_inputLen > 0) {
         _inputLen--;
         _buf[_inputLen] = '\0';
@@ -146,21 +146,45 @@ void TextInputUI::update() {
         flashInputLine();
       }
     }
-    if (_encPtr->wasPressedB()) doSelect();
+    if (_encPtr->wasPressedB()) {
+      _hadInteraction = true;
+      doSelect();
+    }
   } else if (_inputMode == InputMode::INTEGER) {
-    if (_encPtr->wasPressedA()) nextPickerMode();
-    if (_encPtr->wasPressedB()) doSelect();
+    if (_encPtr->wasPressedA()) {
+      _hadInteraction = true;
+      nextPickerMode();
+    }
+    if (_encPtr->wasPressedB()) {
+      _hadInteraction = true;
+      doSelect();
+    }
   } else if (_inputMode == InputMode::MORSE) {
     morseHandlePressLogic();
     morseHandleGaps();
-    if (_encPtr->wasPressedB()) doSelect(); // BACK/SAVE/QUIT
+    if (_encPtr->wasPressedB()) {
+      _hadInteraction = true;
+      doSelect();
+    }
   } else {
-    if (_encPtr->wasPressedA()) nextPickerMode();
-    if (_encPtr->wasPressedB()) doSelect();
+    if (_encPtr->wasPressedA()) {
+      _hadInteraction = true;
+      nextPickerMode();
+    }
+    if (_encPtr->wasPressedB()) {
+      _hadInteraction = true;
+      doSelect();
+    }
   }
 
   updateCursorBlink();
   LCD_Present();
+}
+
+bool TextInputUI::consumeInteraction() {
+  const bool had = _hadInteraction;
+  _hadInteraction = false;
+  return had;
 }
 
 void TextInputUI::setInputInvert(bool invert) {
@@ -636,6 +660,7 @@ void TextInputUI::morseHandlePressLogic() {
 
   // Press edge
   if (!_morsePressing && _encPtr->wasPressedA()) {
+    _hadInteraction = true;
     _morsePressing = true;
     _morsePressStart = now;
     _lastMorseActivity = now;
@@ -645,6 +670,7 @@ void TextInputUI::morseHandlePressLogic() {
 
   // Release edge
   if (_morsePressing && _encPtr->wasReleasedA()) {
+    _hadInteraction = true;
     unsigned long held = now - _morsePressStart;
     if (held <= _morseCfg.dotMaxMs) {
       morseAppendDot();

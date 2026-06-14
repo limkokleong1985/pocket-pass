@@ -558,6 +558,9 @@ static void restoreFromReturnState() {
 }
 
 TextInputUI input("","", 3, TextInputUI::InputMode::STANDARD);
+static constexpr unsigned long PASSCODE_SCREENSAVER_IDLE_MS = 30000UL;
+static void runPasscodeScreensaver();
+
 static String runTextInput(const char* title,
                     const char* description,
                     uint8_t maxLen,
@@ -580,10 +583,19 @@ static String runTextInput(const char* title,
 
   // Begin with the shared encoder (you already called input.begin(g_rotary) in setup)
   input.begin(g_rotary);
+  unsigned long lastInteractionMs = millis();
 
   // Run until saved/canceled
   while (!g_ti_done) {
     input.update();
+    if (input.consumeInteraction()) lastInteractionMs = millis();
+
+    if (mode == TextInputUI::InputMode::PASSCODE && (millis() - lastInteractionMs) >= PASSCODE_SCREENSAVER_IDLE_MS) {
+      runPasscodeScreensaver();
+      input.begin(g_rotary);
+      lastInteractionMs = millis();
+    }
+
     serviceAutoLogout();
     delay(1); // be nice to the watchdog
   }
@@ -631,6 +643,111 @@ static void hidKeyboardTypeBytes(const uint8_t* p, size_t n) {
     delay(10);
   }
   delay(5);
+}
+
+static bool passcodeScreensaverWakeRequested() {
+  g_rotary.update();
+  return g_rotary.wasTurnedCW() || g_rotary.wasTurnedCCW() ||
+         g_rotary.wasPressedA() || g_rotary.wasPressedB() ||
+         g_rotary.wasReleasedA();
+}
+
+static void drawPasscodeScreensaverFrame(uint8_t palette, unsigned long tick) {
+  const uint16_t bg = UI_ColorBg();
+  const uint16_t fg = UI_ColorFg();
+  const uint16_t accent = UI_ColorAccent();
+  const uint16_t selBg = UI_ColorSelectedBg();
+
+  LCD_BeginFrame();
+  LCD_Clear(bg);
+
+  switch (palette) {
+    case 4: { // MATRIX
+      static const char glyphs[] = "0123456789ABCDEF#%+*?@";
+      static const uint8_t glyphCount = sizeof(glyphs) - 1;
+      const uint16_t colStep = 12;
+      const uint16_t rowStep = 16;
+
+      for (uint16_t x = 6; x < LCD_Width(); x += colStep) {
+        const uint16_t columnSeed = (uint16_t)(x * 13U);
+        const uint16_t trailLen = (uint16_t)(5 + ((x / colStep) % 6));
+        const uint16_t speed = (uint16_t)(2 + ((x / colStep) % 3));
+        const uint16_t head = (uint16_t)(((tick / speed) + columnSeed) % (LCD_Height() + trailLen * rowStep + 40));
+
+        for (uint8_t i = 0; i < trailLen; ++i) {
+          int16_t y = (int16_t)head - (int16_t)(i * rowStep);
+          if (y < -12 || y > (int16_t)LCD_Height() - 12) continue;
+
+          uint16_t glyphIdx = (uint16_t)((tick / 2 + columnSeed + i * 7U) % glyphCount);
+          char c[2] = { glyphs[glyphIdx], 0 };
+
+          uint16_t color = accent;
+          if (i == 0) color = UI_ColorSelectedBg();
+          else if (i <= 2) color = fg;
+          else if (i <= 4) color = fg;
+
+          drawString(x, (uint16_t)y, c, color, bg, 2, false);
+        }
+      }
+
+      drawString(18, (uint16_t)(LCD_Height() - 28), "WAKE: ANY INPUT", accent, bg, 1, false);
+    } break;
+
+    case 0: { // TERMINAL
+      drawString(18, 70, "POCKET PASS", fg, bg, 2, false);
+      drawString(18, 110, "SYSTEM LOCKED", fg, bg, 2, false);
+      drawString(18, 150, "> ENTER PASSCODE_", (tick / 20) % 2 ? fg : accent, bg, 2, false);
+      for (uint16_t y = 200; y < 280; y += 16) {
+        char line[20];
+        snprintf(line, sizeof(line), "CHK %02u  OK", (unsigned)((tick / 7 + y) % 100));
+        drawString(18, y, line, accent, bg, 1, false);
+      }
+    } break;
+
+    case 1: { // MONO
+      uint16_t box = 28;
+      uint16_t x = (uint16_t)((tick / 2) % (LCD_Width() - box));
+      uint16_t y = (uint16_t)((tick / 3) % (LCD_Height() - box));
+      LCD_DrawRect(x, y, box, box, fg);
+      drawString(26, 145, "LOCKED", fg, bg, 3, false);
+    } break;
+
+    case 2: { // ICE
+      for (uint16_t y = 20; y < LCD_Height(); y += 26) {
+        uint16_t w = (uint16_t)(30 + ((tick + y * 7U) % 90));
+        LCD_FillRect(10, y, w, 4, accent);
+      }
+      drawString(24, 140, "ICE LOCK", fg, bg, 3, false);
+    } break;
+
+    case 3: { // AMBER
+      drawString(24, 70, "AMBER CRT", fg, bg, 3, false);
+      for (uint16_t y = 120; y < 250; y += 18) {
+        char hexline[18];
+        snprintf(hexline, sizeof(hexline), "%04X %04X", (unsigned)((tick + y) & 0xFFFF), (unsigned)((tick * 3 + y * 9) & 0xFFFF));
+        drawString(32, y, hexline, accent, bg, 2, false);
+      }
+    } break;
+
+    default: {
+      uint16_t radius = (uint16_t)(18 + ((tick / 4) % 24));
+      LCD_DrawCircle(LCD_Width() / 2, LCD_Height() / 2, radius, fg);
+      LCD_DrawCircle(LCD_Width() / 2, LCD_Height() / 2, radius + 12, accent);
+      drawString(28, 142, UI_PaletteName(palette), selBg, bg, 2, false);
+      drawString(40, 172, "LOCKED", fg, bg, 2, false);
+    } break;
+  }
+
+  LCD_EndFrame();
+}
+
+static void runPasscodeScreensaver() {
+  const uint8_t palette = UI_GetPalette();
+  while (true) {
+    if (passcodeScreensaverWakeRequested()) break;
+    drawPasscodeScreensaverFrame(palette, millis() / 4UL);
+    delay(40);
+  }
 }
 
 // ==== Menu Bridges ====
