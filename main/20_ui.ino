@@ -657,85 +657,109 @@ static void drawPasscodeScreensaverFrame(uint8_t palette, unsigned long tick) {
   const uint16_t fg = UI_ColorFg();
   const uint16_t accent = UI_ColorAccent();
   const uint16_t selBg = UI_ColorSelectedBg();
+  const char* paletteName = UI_PaletteName(palette);
 
   LCD_BeginFrame();
   LCD_Clear(bg);
 
-  switch (palette) {
-    case 4: { // MATRIX
-      static const char glyphs[] = "0123456789ABCDEF#%+*?@";
-      static const uint8_t glyphCount = sizeof(glyphs) - 1;
-      const uint16_t colStep = 12;
-      const uint16_t rowStep = 16;
+  if (strcmp(paletteName, "MATRIX") == 0) {
+    static const char glyphs[] = "0123456789ABCDEF#%+*?@";
+    static const uint8_t glyphCount = sizeof(glyphs) - 1;
+    const uint16_t colStep = 12;
+    const uint16_t rowStep = 16;
 
-      for (uint16_t x = 6; x < LCD_Width(); x += colStep) {
-        const uint16_t columnSeed = (uint16_t)(x * 13U);
-        const uint16_t trailLen = (uint16_t)(5 + ((x / colStep) % 6));
-        const uint16_t speed = (uint16_t)(2 + ((x / colStep) % 3));
-        const uint16_t head = (uint16_t)(((tick / speed) + columnSeed) % (LCD_Height() + trailLen * rowStep + 40));
+    for (uint16_t x = 6; x < LCD_Width(); x += colStep) {
+      const uint16_t columnSeed = (uint16_t)(x * 13U);
+      const uint16_t trailLen = (uint16_t)(5 + ((x / colStep) % 6));
+      const uint16_t speed = (uint16_t)(2 + ((x / colStep) % 3));
+      const uint16_t head = (uint16_t)(((tick / speed) + columnSeed) % (LCD_Height() + trailLen * rowStep + 40));
 
-        for (uint8_t i = 0; i < trailLen; ++i) {
-          int16_t y = (int16_t)head - (int16_t)(i * rowStep);
-          if (y < -12 || y > (int16_t)LCD_Height() - 12) continue;
+      for (uint8_t i = 0; i < trailLen; ++i) {
+        int16_t y = (int16_t)head - (int16_t)(i * rowStep);
+        if (y < -12 || y > (int16_t)LCD_Height() - 12) continue;
 
-          uint16_t glyphIdx = (uint16_t)((tick / 2 + columnSeed + i * 7U) % glyphCount);
-          char c[2] = { glyphs[glyphIdx], 0 };
+        uint16_t glyphIdx = (uint16_t)((tick / 2 + columnSeed + i * 7U) % glyphCount);
+        char c[2] = { glyphs[glyphIdx], 0 };
 
-          uint16_t color = accent;
-          if (i == 0) color = UI_ColorSelectedBg();
-          else if (i <= 2) color = fg;
-          else if (i <= 4) color = fg;
+        uint16_t color = accent;
+        if (i == 0) color = selBg;
+        else if (i <= 2) color = fg;
 
-          drawString(x, (uint16_t)y, c, color, bg, 2, false);
-        }
+        drawString(x, (uint16_t)y, c, color, bg, 2, false);
       }
+    }
 
-      drawString(18, (uint16_t)(LCD_Height() - 28), "WAKE: ANY INPUT", accent, bg, 1, false);
-    } break;
+    drawString(18, (uint16_t)(LCD_Height() - 28), "WAKE: ANY INPUT", accent, bg, 1, false);
 
-    case 0: { // TERMINAL
-      drawString(18, 70, "POCKET PASS", fg, bg, 2, false);
-      drawString(18, 110, "SYSTEM LOCKED", fg, bg, 2, false);
-      drawString(18, 150, "> ENTER PASSCODE_", (tick / 20) % 2 ? fg : accent, bg, 2, false);
-      for (uint16_t y = 200; y < 280; y += 16) {
-        char line[20];
-        snprintf(line, sizeof(line), "CHK %02u  OK", (unsigned)((tick / 7 + y) % 100));
-        drawString(18, y, line, accent, bg, 1, false);
-      }
-    } break;
+  } else if (strcmp(paletteName, "PIPBOY") == 0) {
+    drawString(18, 36, "PIP-OS 3000", fg, bg, 2, false);
+    drawString(18, 62, "VAULT ACCESS LOCKED", accent, bg, 1, false);
 
-    case 1: { // MONO
-      uint16_t box = 28;
-      uint16_t x = (uint16_t)((tick / 2) % (LCD_Width() - box));
-      uint16_t y = (uint16_t)((tick / 3) % (LCD_Height() - box));
-      LCD_DrawRect(x, y, box, box, fg);
-      drawString(26, 145, "LOCKED", fg, bg, 3, false);
-    } break;
+    const uint16_t graphX = 16;
+    const uint16_t graphY = 104;
+    const uint16_t graphW = 138;
+    const uint16_t graphH = 72;
+    LCD_DrawRect(graphX, graphY, graphW, graphH, fg);
+    for (uint16_t x = graphX + 4; x < graphX + graphW - 4; x += 10) LCD_DrawLine(x, graphY + 1, x, graphY + graphH - 2, accent);
+    for (uint16_t y = graphY + 10; y < graphY + graphH - 2; y += 10) LCD_DrawLine(graphX + 1, y, graphX + graphW - 2, y, accent);
 
-    case 2: { // ICE
-      for (uint16_t y = 20; y < LCD_Height(); y += 26) {
-        uint16_t w = (uint16_t)(30 + ((tick + y * 7U) % 90));
-        LCD_FillRect(10, y, w, 4, accent);
-      }
-      drawString(24, 140, "ICE LOCK", fg, bg, 3, false);
-    } break;
+    uint16_t prevX = graphX + 4;
+    uint16_t prevY = graphY + graphH / 2;
+    for (uint16_t x = 0; x < graphW - 10; x += 6) {
+      uint16_t px = graphX + 4 + x;
+      uint16_t wave = (uint16_t)((tick / 3 + x * 5U) % 48U);
+      uint16_t py = (uint16_t)(graphY + 10 + (wave < 24 ? wave : 48 - wave));
+      LCD_DrawLine(prevX, prevY, px, py, selBg);
+      prevX = px;
+      prevY = py;
+    }
 
-    case 3: { // AMBER
-      drawString(24, 70, "AMBER CRT", fg, bg, 3, false);
-      for (uint16_t y = 120; y < 250; y += 18) {
-        char hexline[18];
-        snprintf(hexline, sizeof(hexline), "%04X %04X", (unsigned)((tick + y) & 0xFFFF), (unsigned)((tick * 3 + y * 9) & 0xFFFF));
-        drawString(32, y, hexline, accent, bg, 2, false);
-      }
-    } break;
+    char statA[24];
+    char statB[24];
+    snprintf(statA, sizeof(statA), "SIG %02u%%", (unsigned)((tick / 5) % 100));
+    snprintf(statB, sizeof(statB), "RAD %02u", (unsigned)((tick / 7) % 40));
+    drawString(18, 196, statA, fg, bg, 2, false);
+    drawString(18, 224, statB, fg, bg, 2, false);
+    drawString(18, 262, "TAP ANY KEY TO WAKE", accent, bg, 1, false);
 
-    default: {
-      uint16_t radius = (uint16_t)(18 + ((tick / 4) % 24));
-      LCD_DrawCircle(LCD_Width() / 2, LCD_Height() / 2, radius, fg);
-      LCD_DrawCircle(LCD_Width() / 2, LCD_Height() / 2, radius + 12, accent);
-      drawString(28, 142, UI_PaletteName(palette), selBg, bg, 2, false);
-      drawString(40, 172, "LOCKED", fg, bg, 2, false);
-    } break;
+  } else if (strcmp(paletteName, "TERMINAL") == 0) {
+    drawString(18, 70, "POCKET PASS", fg, bg, 2, false);
+    drawString(18, 110, "SYSTEM LOCKED", fg, bg, 2, false);
+    drawString(18, 150, "> ENTER PASSCODE_", (tick / 20) % 2 ? fg : accent, bg, 2, false);
+    for (uint16_t y = 200; y < 280; y += 16) {
+      char line[20];
+      snprintf(line, sizeof(line), "CHK %02u  OK", (unsigned)((tick / 7 + y) % 100));
+      drawString(18, y, line, accent, bg, 1, false);
+    }
+
+  } else if (strcmp(paletteName, "MONO") == 0) {
+    uint16_t box = 28;
+    uint16_t x = (uint16_t)((tick / 2) % (LCD_Width() - box));
+    uint16_t y = (uint16_t)((tick / 3) % (LCD_Height() - box));
+    LCD_DrawRect(x, y, box, box, fg);
+    drawString(26, 145, "LOCKED", fg, bg, 3, false);
+
+  } else if (strcmp(paletteName, "ICE") == 0) {
+    for (uint16_t y = 20; y < LCD_Height(); y += 26) {
+      uint16_t w = (uint16_t)(30 + ((tick + y * 7U) % 90));
+      LCD_FillRect(10, y, w, 4, accent);
+    }
+    drawString(24, 140, "ICE LOCK", fg, bg, 3, false);
+
+  } else if (strcmp(paletteName, "AMBER") == 0) {
+    drawString(24, 70, "AMBER CRT", fg, bg, 3, false);
+    for (uint16_t y = 120; y < 250; y += 18) {
+      char hexline[18];
+      snprintf(hexline, sizeof(hexline), "%04X %04X", (unsigned)((tick + y) & 0xFFFF), (unsigned)((tick * 3 + y * 9) & 0xFFFF));
+      drawString(32, y, hexline, accent, bg, 2, false);
+    }
+
+  } else {
+    uint16_t radius = (uint16_t)(18 + ((tick / 4) % 24));
+    LCD_DrawCircle(LCD_Width() / 2, LCD_Height() / 2, radius, fg);
+    LCD_DrawCircle(LCD_Width() / 2, LCD_Height() / 2, radius + 12, accent);
+    drawString(28, 142, UI_PaletteName(palette), selBg, bg, 2, false);
+    drawString(40, 172, "LOCKED", fg, bg, 2, false);
   }
 
   LCD_EndFrame();
