@@ -665,12 +665,12 @@ static void drawPasscodeScreensaverFrame(uint8_t palette, unsigned long tick) {
   if (strcmp(paletteName, "MATRIX") == 0) {
     static const char glyphs[] = "0123456789ABCDEF#%+*?@";
     static const uint8_t glyphCount = sizeof(glyphs) - 1;
-    const uint16_t colStep = 12;
-    const uint16_t rowStep = 16;
+    const uint16_t colStep = 9;
+    const uint16_t rowStep = 10;
 
     for (uint16_t x = 6; x < LCD_Width(); x += colStep) {
-      const uint16_t columnSeed = (uint16_t)(x * 13U);
-      const uint16_t trailLen = (uint16_t)(5 + ((x / colStep) % 6));
+      const uint16_t columnSeed = (uint16_t)(x * 10U);
+      const uint16_t trailLen = (uint16_t)(10 + ((x / colStep) % 6));
       const uint16_t speed = (uint16_t)(2 + ((x / colStep) % 3));
       const uint16_t head = (uint16_t)(((tick / speed) + columnSeed) % (LCD_Height() + trailLen * rowStep + 40));
 
@@ -683,13 +683,13 @@ static void drawPasscodeScreensaverFrame(uint8_t palette, unsigned long tick) {
 
         uint16_t color = accent;
         if (i == 0) color = selBg;
-        else if (i <= 2) color = fg;
+        else if (i <= 8) color = fg;
 
-        drawString(x, (uint16_t)y, c, color, bg, 2, false);
+        drawString(x, (uint16_t)y, c, color, bg, 1, false);
       }
     }
 
-    drawString(18, (uint16_t)(LCD_Height() - 28), "WAKE: ANY INPUT", accent, bg, 1, false);
+    //drawString(18, (uint16_t)(LCD_Height() - 28), "", accent, bg, 1, false);
 
   } else if (strcmp(paletteName, "PIPBOY") == 0) {
     drawString(18, 36, "PIP-OS 3000", fg, bg, 2, false);

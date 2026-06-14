@@ -330,7 +330,7 @@ static String generatePassword(const PwSettings& s) {
   const char* U = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   const char* L = "abcdefghijklmnopqrstuvwxyz";
   const char* N = "0123456789";
-  const char* S = "!@#$%^&*()-_=+[]{};:',.<>/?\\|";
+  const char* S = "!@#_.-";
   auto rnd32 = []() -> uint32_t { return esp_random(); };
 
   String out;
