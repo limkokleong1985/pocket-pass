@@ -21,7 +21,7 @@ static const UIColorPalette kPalettes[] = {
   {"AMBER",    0x18C3, 0xFF9E, 0xFD20, 0xFD20, 0x18C3},
   {"OCEAN",    0x0147, 0xD7FF, 0x2D7F, 0x2D7F, 0x0147},
   {"ROSE",     0x2808, 0xFF5D, 0xF218, 0xF218, 0x2808},
-  {"TERMINAL", 0x0000, 0x87F0, 0x0400, 0x87F0, 0x0000},
+  {"TERMINAL", 0x1126, 0xB7BF, 0x42CF, 0xB7BF, 0x1126},
 };
 static uint8_t g_palette_idx = 0;
 const uint16_t extraSpacing = TEXT_EXTRA_SPACING;
@@ -55,6 +55,32 @@ uint16_t UI_ColorAccent(void) { return UI_GetPaletteDef().accent; }
 uint16_t UI_ColorSelectedBg(void) { return UI_GetPaletteDef().selectedBg; }
 uint16_t UI_ColorSelectedFg(void) { return UI_GetPaletteDef().selectedFg; }
 
+static bool uiHasRetroBackdrop() {
+  return strcmp(UI_PaletteName(UI_GetPalette()), "TERMINAL") == 0;
+}
+
+template <typename TCanvas>
+static void drawRetroBackdrop(TCanvas& canvas, uint16_t w, uint16_t h) {
+  const uint16_t bg = UI_ColorBg();
+  const uint16_t accent = UI_ColorAccent();
+  const uint16_t fg = UI_ColorFg();
+
+  canvas.fillScreen(bg);
+
+  for (uint16_t y = 0; y < h; y += 4) {
+    canvas.drawFastHLine(0, y, w, accent);
+  }
+  for (uint16_t y = 2; y < h; y += 4) {
+    canvas.drawFastHLine(0, y, w, bg);
+  }
+  for (uint16_t x = 8; x < w; x += 24) {
+    canvas.drawFastVLine(x, 0, h, accent);
+  }
+
+  canvas.drawRect(2, 2, w - 4, h - 4, fg);
+  canvas.drawRect(6, 6, w - 12, h - 12, accent);
+}
+
 static void markFrameDirty() {
   g_frame_dirty = true;
 }
@@ -72,7 +98,8 @@ static void ensureFramebuffer() {
   framebuffer.setSwapBytes(false);
   g_has_framebuffer = framebuffer.createSprite(g_width, g_height) != nullptr;
   if (g_has_framebuffer) {
-    framebuffer.fillSprite(UI_ColorBg());
+    if (uiHasRetroBackdrop()) drawRetroBackdrop(framebuffer, g_width, g_height);
+    else framebuffer.fillSprite(UI_ColorBg());
     markFrameDirty();
   }
 }
@@ -631,8 +658,14 @@ void LCD_SetCursor(uint16_t Xstart, uint16_t Ystart, uint16_t Xend, uint16_t Yen
 }
 
 void LCD_Clear(uint16_t color) {
-  if (g_has_framebuffer) framebuffer.fillSprite(color);
-  else tft.fillScreen(color);
+  const bool useBackdrop = uiHasRetroBackdrop() && color == UI_ColorBg();
+  if (g_has_framebuffer) {
+    if (useBackdrop) drawRetroBackdrop(framebuffer, g_width, g_height);
+    else framebuffer.fillSprite(color);
+  } else {
+    if (useBackdrop) drawRetroBackdrop(tft, g_width, g_height);
+    else tft.fillScreen(color);
+  }
   markFrameDirty();
 }
 

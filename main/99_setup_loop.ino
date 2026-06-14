@@ -3,9 +3,13 @@
 void setup() {
   Serial.begin(115200);
   delay(200);
-  Serial.println("\n[BOOT] Booting Password Manager...");
+    Serial.println("\n[BOOT] Booting Password Manager...");
+  Serial.println("[BOOT] NVS init");
+  nvs_flash_init();
+
   LCD_Init();
   LCD_SetOrientation(LCD_ORIENTATION);
+  UI_SetPalette(loadPaletteSetting());
   
   g_rotary.begin(ENC_PIN_B, ENC_PIN_A, BTN_BACK, BTN_SELECT, BTN_UP, BTN_DOWN);
   
@@ -14,9 +18,6 @@ void setup() {
   menu.setInvertDirection(!INVERT_MENU_SELECTION);
   drawLogo();
   delay(2000);
-
-  Serial.println("[BOOT] NVS init");
-  nvs_flash_init();
 
   if (consumeMSCFlag()) {
     bootMSCMode();

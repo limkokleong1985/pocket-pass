@@ -36,6 +36,8 @@ static constexpr uint8_t PIN_MAX_FAILS = 6;
 static constexpr const char* AUTH_NS       = "auth";
 static constexpr const char* AUTH_FAIL_KEY = "pin_fail";
 static constexpr const char* AUTH_LOCK_KEY = "pin_lock";
+static constexpr const char* UI_NS         = "ui";
+static constexpr const char* UI_PALETTE_KEY = "palette";
 
 // 0 = lockout only (recommended)
 // 1 = lockout + scramble meta so recovery is impossible (self-destruct)
@@ -252,6 +254,7 @@ static bool loadMeta();
 static bool saveMeta();
 static bool loadItems();
 static bool saveItems();
+static uint8_t loadPaletteSetting();
 static bool loadConfig();
 static bool saveConfig();
 static bool isVaultPresent();

@@ -220,26 +220,30 @@ void TextInputUI::clear() {
 
 // ==== UI drawing ====
 void TextInputUI::drawStaticUI() {
-  LCD_Clear(BLACK);
-  LCD_DrawLine(0, _layout.startY + 8,  LCD_Width() - 1, _layout.startY + 8,  WHITE);
-  LCD_DrawLine(0, _layout.startY + 10, LCD_Width() - 1, _layout.startY + 10, WHITE);
+  const uint16_t bg = UI_ColorBg();
+  const uint16_t fg = UI_ColorFg();
+  const uint16_t accent = UI_ColorAccent();
+
+  LCD_Clear(bg);
+  LCD_DrawLine(0, _layout.startY + 8,  LCD_Width() - 1, _layout.startY + 8,  accent);
+  LCD_DrawLine(0, _layout.startY + 10, LCD_Width() - 1, _layout.startY + 10, accent);
 
   if (_title && *_title) {
     drawStringWithPadding(_layout.startX + 7, _layout.startY,
-                          _title, WHITE, BLACK, 2, 8, 4, false);
+                          _title, fg, bg, 2, 8, 4, false);
   }
   if (_description && *_description) {
     drawStringWrapWidth(_layout.startX + 7, _layout.startY + 25,
-                        _description, WHITE, BLACK, 2, _layout.scrollPickX - 25);
+                        _description, fg, bg, 2, _layout.scrollPickX - 25);
   }
 
-  LCD_DrawLine(0, _layout.inputStartY, LCD_Width() - 1, _layout.inputStartY, WHITE);
+  LCD_DrawLine(0, _layout.inputStartY, LCD_Width() - 1, _layout.inputStartY, accent);
   drawRemainingLabel();
   drawStringWithPadding(_layout.inputStartX, _layout.inputStartY + 15,
-                        "> ", WHITE, BLACK, 2, 8, 4, false);
+                        "> ", fg, bg, 2, 8, 4, false);
 
-  LCD_FillRect(_layout.scrollPickX, 0, LCD_Width() - _layout.scrollPickX, LCD_Height(), BLACK);
-  LCD_DrawLine(_layout.scrollPickX, 0, _layout.scrollPickX, LCD_Height(), WHITE);
+  LCD_FillRect(_layout.scrollPickX, 0, LCD_Width() - _layout.scrollPickX, LCD_Height(), bg);
+  LCD_DrawLine(_layout.scrollPickX, 0, _layout.scrollPickX, LCD_Height(), accent);
 }
 
 void TextInputUI::drawInputText() {
@@ -248,7 +252,7 @@ void TextInputUI::drawInputText() {
   const uint16_t clearW = _layout.scrollPickX - clearX - 5;
   const uint16_t clearH = 26;
 
-  LCD_FillRect(clearX - 7, clearY - 10, clearW + 10, clearH + 10, BLACK);
+  LCD_FillRect(clearX - 7, clearY - 10, clearW + 10, clearH + 10, UI_ColorBg());
 
   uint8_t visibleLen = (_inputLen <= VISIBLE_CHARS) ? _inputLen : VISIBLE_CHARS;
   uint8_t startIdx   = (_inputLen <= VISIBLE_CHARS) ? 0 : (_inputLen - VISIBLE_CHARS);
@@ -261,7 +265,7 @@ void TextInputUI::drawInputText() {
     line[visibleLen] = '\0';
   }
 
-  drawStringWithPadding(clearX, clearY, line, WHITE, BLACK,
+  drawStringWithPadding(clearX, clearY, line, UI_ColorFg(), UI_ColorBg(),
                         INPUT_FONT_SIZE, INPUT_TEXT_PAD_X, INPUT_TEXT_PAD_Y, false);
 
   if (_cursorVisible) {
@@ -272,7 +276,7 @@ void TextInputUI::drawInputText() {
     r.y = (uint16_t)(baseY + (LINE_H) - 1);
     r.w = CHAR_BODY_W;
     r.h = 1;
-    LCD_FillRect(r.x, r.y, r.w, r.h, WHITE);
+    LCD_FillRect(r.x, r.y, r.w, r.h, UI_ColorAccent());
   }
 
   if (_inputMode == InputMode::MORSE) {
@@ -281,7 +285,7 @@ void TextInputUI::drawInputText() {
 }
 
 void TextInputUI::drawModeHeader() {
-  LCD_FillRect(_layout.scrollPickX + 2, 2, LCD_Width() - (_layout.scrollPickX), 16, BLACK);
+  LCD_FillRect(_layout.scrollPickX + 2, 2, LCD_Width() - (_layout.scrollPickX), 16, UI_ColorBg());
   const char* name = "";
   if (_inputMode == InputMode::PASSCODE) name = "";
   else if (_inputMode == InputMode::MORSE) name = "morse actions";
@@ -300,14 +304,14 @@ void TextInputUI::drawModeHeader() {
     }
   }
   if (name[0] != '\0') {
-    drawStringWithPadding(_layout.scrollPickX + 10, 4, name, WHITE, BLACK, 1, 6, 3, false);
+    drawStringWithPadding(_layout.scrollPickX + 10, 4, name, UI_ColorFg(), UI_ColorBg(), 1, 6, 3, false);
   }
 }
 
 void TextInputUI::clearRightPaneContent() {
   LCD_FillRect(_layout.scrollPickX + 1, 20,
                LCD_Width() - (_layout.scrollPickX),
-               LCD_Height() - 22, BLACK);
+               LCD_Height() - 22, UI_ColorBg());
 }
 
 void TextInputUI::drawScroller() {
@@ -325,8 +329,8 @@ void TextInputUI::drawScroller() {
     if (_inputMode == InputMode::PASSCODE) {
       char c = '0' + ((idx % 10 + 10) % 10);
       char s[2] = { c, 0 };
-      if (i == 2) drawStringWithPadding(x, y, s, BLACK, WHITE, 2, 8, 4, false);
-      else        drawStringWithPadding(x, y, s, WHITE, BLACK, 2, 8, 4, false);
+      if (i == 2) drawStringWithPadding(x, y, s, UI_ColorSelectedFg(), UI_ColorSelectedBg(), 2, 8, 4, false);
+      else        drawStringWithPadding(x, y, s, UI_ColorFg(), UI_ColorBg(), 2, 8, 4, false);
       continue;
     }
 
@@ -334,32 +338,32 @@ void TextInputUI::drawScroller() {
       if (_pickerMode == PickerMode::INTNUM) {
         char c = '0' + ((idx % 10 + 10) % 10);
         char s[2] = { c, 0 };
-        if (i == 2) drawStringWithPadding(x, y, s, BLACK, WHITE, 2, 8, 4, false);
-        else        drawStringWithPadding(x, y, s, WHITE, BLACK, 2, 8, 4, false);
+        if (i == 2) drawStringWithPadding(x, y, s, UI_ColorSelectedFg(), UI_ColorSelectedBg(), 2, 8, 4, false);
+        else        drawStringWithPadding(x, y, s, UI_ColorFg(), UI_ColorBg(), 2, 8, 4, false);
       } else {
         const char* s = actionLabel(_pickerMode, idx);
-        if (i == 2) drawStringWithPadding(x, y, s, BLACK, WHITE, 2, 8, 4, false);
-        else        drawStringWithPadding(x, y, s, WHITE, BLACK, 2, 8, 4, false);
+        if (i == 2) drawStringWithPadding(x, y, s, UI_ColorSelectedFg(), UI_ColorSelectedBg(), 2, 8, 4, false);
+        else        drawStringWithPadding(x, y, s, UI_ColorFg(), UI_ColorBg(), 2, 8, 4, false);
       }
       continue;
     }
 
     if (_inputMode == InputMode::MORSE) {
       const char* s = actionLabel(PickerMode::MORSE_ACTIONS, idx);
-      if (i == 2) drawStringWithPadding(x, y, s, BLACK, WHITE, 2, 8, 4, false);
-      else        drawStringWithPadding(x, y, s, WHITE, BLACK, 2, 8, 4, false);
+      if (i == 2) drawStringWithPadding(x, y, s, UI_ColorSelectedFg(), UI_ColorSelectedBg(), 2, 8, 4, false);
+      else        drawStringWithPadding(x, y, s, UI_ColorFg(), UI_ColorBg(), 2, 8, 4, false);
       continue;
     }
 
     if (_pickerMode == PickerMode::ACTIONS || _pickerMode == PickerMode::SAVE) {
       const char* s = actionLabel(_pickerMode, idx);
-      if (i == 2) drawStringWithPadding(x, y, s, BLACK, WHITE, 2, 8, 4, false);
-      else        drawStringWithPadding(x, y, s, WHITE, BLACK, 2, 8, 4, false);
+      if (i == 2) drawStringWithPadding(x, y, s, UI_ColorSelectedFg(), UI_ColorSelectedBg(), 2, 8, 4, false);
+      else        drawStringWithPadding(x, y, s, UI_ColorFg(), UI_ColorBg(), 2, 8, 4, false);
     } else {
       char c = charAt(_pickerMode, idx);
       char s[2] = { c ? c : ' ', 0 };
-      if (i == 2) drawStringWithPadding(x, y, s, BLACK, WHITE, 2, 8, 4, false);
-      else        drawStringWithPadding(x, y, s, WHITE, BLACK, 2, 8, 4, false);
+      if (i == 2) drawStringWithPadding(x, y, s, UI_ColorSelectedFg(), UI_ColorSelectedBg(), 2, 8, 4, false);
+      else        drawStringWithPadding(x, y, s, UI_ColorFg(), UI_ColorBg(), 2, 8, 4, false);
     }
   }
 }
@@ -375,7 +379,7 @@ void TextInputUI::drawRemainingLabel() {
   uint16_t w = (uint16_t)(strlen(buf) * 6);
   uint16_t x = (rightEdge > w) ? (rightEdge - w) : 0;
 
-  drawStringWithPadding(x, y, buf, BLACK, WHITE, 1, 6, 3, false);
+  drawStringWithPadding(x, y, buf, UI_ColorSelectedFg(), UI_ColorSelectedBg(), 1, 6, 3, false);
 }
 
 // ==== Interactions ====
@@ -423,8 +427,8 @@ void TextInputUI::flashInputLine() {
     line[visibleLen] = '\0';
   }
 
-  LCD_FillRect(clearX - 7, clearY - 5, clearW, clearH, WHITE);
-  drawStringWithPadding(clearX, clearY, line, BLACK, WHITE, INPUT_FONT_SIZE, INPUT_TEXT_PAD_X, INPUT_TEXT_PAD_Y, false);
+  LCD_FillRect(clearX - 7, clearY - 5, clearW, clearH, UI_ColorSelectedBg());
+  drawStringWithPadding(clearX, clearY, line, UI_ColorSelectedFg(), UI_ColorSelectedBg(), INPUT_FONT_SIZE, INPUT_TEXT_PAD_X, INPUT_TEXT_PAD_Y, false);
   drawInputText();
 }
 
@@ -575,7 +579,7 @@ TextInputUI::UICaretRect TextInputUI::getCaretRectThin() const {
 
 void TextInputUI::drawCaret(bool visible) {
   UICaretRect r = getCaretRectThin();
-  LCD_FillRect(r.x, r.y, r.w, r.h, visible ? WHITE : BLACK);
+  LCD_FillRect(r.x, r.y, r.w, r.h, visible ? UI_ColorAccent() : UI_ColorBg());
 }
 
 uint16_t TextInputUI::textPixelWidthFs1(const char* s) {
@@ -673,7 +677,7 @@ void TextInputUI::clearMorseIndicatorArea() {
                _layout.morseIndicatorY - 6,
                boxW,
                boxH,
-               BLACK);
+               UI_ColorBg());
 }
 
 void TextInputUI::drawMorseIndicator() {
@@ -693,7 +697,7 @@ void TextInputUI::drawMorseIndicator() {
   drawStringWithPadding(_layout.morseIndicatorX,
                         _layout.morseIndicatorY,
                         preview,
-                        WHITE, BLACK,
+                        UI_ColorFg(), UI_ColorBg(),
                         2, 8, 4, false);
 }
 

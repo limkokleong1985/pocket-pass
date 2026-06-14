@@ -416,10 +416,28 @@ static bool saveItems() {
   return true;
 }
 
+static uint8_t loadPaletteSetting() {
+  if (!g_prefs.begin(UI_NS, true, MSC_PART)) return 0;
+  uint8_t palette = (uint8_t)g_prefs.getUChar(UI_PALETTE_KEY, 0);
+  g_prefs.end();
+  if (palette >= UI_PaletteCount()) return 0;
+  return palette;
+}
+
+static void savePaletteSetting(uint8_t palette) {
+  uint8_t safePalette = (palette < UI_PaletteCount()) ? palette : 0;
+  if (!g_prefs.begin(UI_NS, false, MSC_PART)) return;
+  g_prefs.putUChar(UI_PALETTE_KEY, safePalette);
+  g_prefs.end();
+}
+
 static bool loadConfig() {
-  Serial.println("[IO] loadConfig (DB)");
+  Serial.println("[IO] loadConfig (DB + NVS)");
+  g_settings.palette = loadPaletteSetting();
+  UI_SetPalette(g_settings.palette);
+
   if (!db_open()) return false;
-  const char* sql = "SELECT uppercase, lowercase, number, symbol, palette FROM config LIMIT 1;";
+  const char* sql = "SELECT uppercase, lowercase, number, symbol FROM config LIMIT 1;";
   sqlite3_stmt* st = nullptr;
   int rc = sqlite3_prepare_v2(g_db, sql, -1, &st, nullptr);
   if (rc != SQLITE_OK) return false;
@@ -430,7 +448,7 @@ static bool loadConfig() {
     g_settings.number    = (uint8_t)sqlite3_column_int(st, 2);
     g_settings.symbol    = (uint8_t)sqlite3_column_int(st, 3);
     sqlite3_finalize(st);
-    Serial.printf("[IO] loadConfig OK U=%u L=%u S=%u N=%u\n", g_settings.uppercase, g_settings.lowercase, g_settings.symbol, g_settings.number);
+    Serial.printf("[IO] loadConfig OK U=%u L=%u S=%u N=%u P=%u\n", g_settings.uppercase, g_settings.lowercase, g_settings.symbol, g_settings.number, g_settings.palette);
     return true;
   }
   sqlite3_finalize(st);
@@ -439,24 +457,24 @@ static bool loadConfig() {
 }
 
 static bool saveConfig() {
-  Serial.println("[IO] saveConfig (DB)");
+  Serial.println("[IO] saveConfig (DB + NVS)");
   if (!db_open()) return false;
   if (!db_begin()) return false;
   if (!db_exec("DELETE FROM config;")) { db_rollback(); return false; }
-  const char* sql = "INSERT INTO config(uppercase, lowercase, number, symbol, palette) VALUES (?, ?, ?, ?, ?);";
+  const char* sql = "INSERT INTO config(uppercase, lowercase, number, symbol) VALUES (?, ?, ?, ?);";
   sqlite3_stmt* st = nullptr;
   if (sqlite3_prepare_v2(g_db, sql, -1, &st, nullptr) != SQLITE_OK) { db_rollback(); return false; }
   sqlite3_bind_int(st, 1, (int)g_settings.uppercase);
   sqlite3_bind_int(st, 2, (int)g_settings.lowercase);
   sqlite3_bind_int(st, 3, (int)g_settings.number);
   sqlite3_bind_int(st, 4, (int)g_settings.symbol);
-  sqlite3_bind_int(st, 5, (int)g_settings.palette);
   int rc = sqlite3_step(st);
   sqlite3_finalize(st);
   if (rc != SQLITE_DONE) { db_rollback(); return false; }
   if (!db_commit()) { db_rollback(); return false; }
+  savePaletteSetting(g_settings.palette);
   UI_SetPalette(g_settings.palette);
-  Serial.println("[IO] saveConfig OK");
+  Serial.printf("[IO] saveConfig OK P=%u\n", g_settings.palette);
   return true;
 }
 

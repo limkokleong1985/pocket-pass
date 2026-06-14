@@ -62,11 +62,17 @@ static void mountSD() {
 }
 
 void drawLogo(){
+  const uint16_t bg = UI_ColorBg();
+  const uint16_t fg = UI_ColorFg();
+  const uint16_t accent = UI_ColorSelectedBg();
+  const uint16_t accentFg = UI_ColorSelectedFg();
+
   LCD_BeginFrame();
+  LCD_Clear(bg);
   menu.setTitle("WELCOME");
-  LCD_FillRect(47, 55, 219, 39, WHITE);
-  drawStringWithPadding(57, 62, "Pocket Pass",WHITE, BLACK, 3,8, 4, false);
-  drawStringWithPadding(17, 155, firmwareVersion,WHITE, BLACK, 2,8, 4, false);
+  LCD_FillRect(47, 55, 219, 39, accent);
+  drawStringWithPadding(57, 62, "Pocket Pass", accentFg, accent, 3, 8, 4, false);
+  drawStringWithPadding(17, 155, firmwareVersion, fg, bg, 2, 8, 4, false);
   LCD_EndFrame();
 }
 
